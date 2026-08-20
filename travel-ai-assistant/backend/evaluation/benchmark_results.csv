@@ -1,0 +1,31 @@
+case_id,category,expected_intent,actual_intent,intent_ok,slot_correct,slot_total,workflow_ok,context_ok,failed_slots,final_reply
+flight_001,flight,flight_search,flight_search,True,5,5,True,,,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+flight_002,flight,flight_search,flight_search,True,6,6,True,,,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+flight_003,flight,flight_search,flight_search,True,6,6,True,,,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+flight_004,flight,flight_search,flight_search,True,5,5,True,,,"I could not use Duffel, so I found mock fallback flight options from EMA to JFK."
+flight_005,flight,flight_search,flight_search,True,6,6,True,,,"I could not use Duffel, so I found mock fallback flight options from EMA to CDG."
+hotel_001,hotel,hotel_search,hotel_search,True,4,4,True,,,I searched hotels in London near Hyde Park. I found 3 mock fallback hotel option(s).
+hotel_002,hotel,hotel_search,hotel_search,True,5,5,True,,,I searched hotels in London near Big Ben. I found 3 mock fallback hotel option(s).
+hotel_003,hotel,hotel_search,hotel_search,True,4,4,True,,,I found 3 mock fallback hotel option(s).
+hotel_004,hotel,hotel_search,hotel_search,True,5,5,True,,,I found 3 mock fallback hotel option(s).
+hotel_005,hotel,hotel_search,hotel_search,True,5,5,True,,,I searched hotels in Barcelona around Barcelona. I found 3 mock fallback hotel option(s).
+package_001,package,package_search,flight_search,False,6,7,False,,"latest_visible_result_type: expected 'packages', got 'flights'","I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+package_002,package,clarification,clarification,True,0,0,True,,,Where would you like to go?
+package_003,package,package_search,clarification,False,1,5,False,,"destination: expected 'ERZ', got None; destination_city: expected 'Erzurum', got None; nights: expected 3, got None; latest_visible_result_type: expected 'packages', got 'package_clarification'",Where would you like to go?
+package_004,package,package_search,package_search,True,7,7,True,,,"I built package options for your 3-night Lyon trip from East Midlands Airport (EMA), departing 1 Sep 2026 and returning 4 Sep 2026. The cheapest package is GBP 408.00 including return flight and hotel. The package route is EMA to LYS."
+package_005,package,package_search,clarification,False,1,6,False,,"destination: expected 'CDG', got None; destination_city: expected 'Paris', got None; departure_date: expected '2026-09-12', got '2026-08-12'; return_date: expected '2026-09-15', got '2026-08-15'; latest_visible_result_type: expected 'packages', got 'trip_clarification'",Got it - I'll use 12 Aug 2026 to 15 Aug 2026. Where would you like to go?
+package_006,package,package_search,clarification,False,5,7,False,,"return_date: expected '2026-09-16', got None; latest_visible_result_type: expected 'packages', got 'package_clarification'","Great - I'll use East Midlands (EMA) to Hurghada (HRG), departing 12 Sep 2026. How many nights will you stay, or what date do you want to return?"
+context_001,follow_up_context,hotel_search,hotel_search,True,2,2,True,True,,"The cheapest hotel is option 1, Paris Central Hotel 1, at £528.00 for 4 nights from 12 Sep 2026 to 16 Sep 2026. Would you like to select this hotel?"
+context_002,follow_up_context,clarification,clarification,True,0,0,True,True,,Which flight option would you like to add to your cart?
+context_003,follow_up_context,cart_update,cart_update,True,2,2,True,True,,I added package option 2 to your cart. The total is GBP 448.00. You can now proceed to checkout.
+context_004,follow_up_context,flight_search,flight_search,True,3,3,True,True,,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+context_005,follow_up_context,destination_discovery,general_enquiry,False,0,3,False,False,"excluded_region: expected 'Europe', got []; required_activity: expected 'skiing', got []; latest_visible_result_type: expected 'destinations', got None","Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+context_006,follow_up_context,clarification,clarification,True,3,4,False,False,"nights: expected 3, got None",I can use East Midlands Airport (EMA) as your origin and Beirut (BEY) as your destination. Please provide your departure date and return date.
+voice_001,voice_style_misrecognition,clarification,clarification,True,0,0,True,,,Got it - I'll use 11 Aug 2026 to 15 Aug 2026. Where would you like to go?
+voice_002,voice_style_misrecognition,flight_search,flight_search,True,4,4,True,True,,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+voice_003,voice_style_misrecognition,cart_update,flight_selection,False,1,2,False,False,"latest_visible_result_type: expected 'cart', got 'flight_selected'",You selected flight option 1. Would you like to add it to your cart and continue to checkout?
+voice_004,voice_style_misrecognition,hotel_selection,hotel_selection,True,2,2,True,True,,You selected Paris Central Hotel 1. Would you like to add it to your cart and continue to checkout?
+cart_001,cart_checkout,flight_selection,flight_selection,True,1,1,True,,,You selected flight option 1. Would you like to add it to your cart and continue to checkout?
+cart_002,cart_checkout,cart_update,cart_update,True,3,3,True,,,Great - I added Paris Central Hotel 1 to your cart. Your stay is 12 Sep 2026 to 16 Sep 2026. You can now continue to checkout.
+cart_003,cart_checkout,checkout,checkout,True,2,2,True,,,Please sign in to complete checkout. I saved your selected package so you can continue after signing in.
+cart_004,cart_checkout,cart_update,cart_update,True,1,1,True,,,You're welcome - your selected item is in the cart. You can continue to checkout when ready.

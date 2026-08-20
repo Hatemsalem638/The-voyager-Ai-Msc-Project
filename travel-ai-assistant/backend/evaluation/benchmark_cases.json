@@ -1,0 +1,465 @@
+[
+  {
+    "id": "flight_001",
+    "category": "flight",
+    "messages": [
+      "I want to fly to London",
+      "11th and back on 15"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "origin": "EMA",
+      "destination": "LHR",
+      "departure_date": "2026-08-11",
+      "return_date": "2026-08-15",
+      "latest_visible_result_type": "flights"
+    }
+  },
+  {
+    "id": "flight_002",
+    "category": "flight",
+    "messages": [
+      "I wanna fly to London for three days and two nights",
+      "I want to depart on the 15"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "origin": "EMA",
+      "destination": "LHR",
+      "departure_date": "2026-08-15",
+      "return_date": "2026-08-17",
+      "nights": 2,
+      "latest_visible_result_type": "flights"
+    }
+  },
+  {
+    "id": "flight_003",
+    "category": "flight",
+    "messages": [
+      "I'd like to plan a trip to London and my budget is a thousand pounds",
+      "I will leave on the 11th and come back on the 15th"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "origin": "EMA",
+      "destination": "LHR",
+      "departure_date": "2026-08-11",
+      "return_date": "2026-08-15",
+      "budget": 1000,
+      "latest_visible_result_type": "flights"
+    }
+  },
+  {
+    "id": "flight_004",
+    "category": "flight",
+    "messages": [
+      "Find me a direct flight from East Midlands to New York on 12 September and return 16 September"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "origin": "EMA",
+      "destination": "JFK",
+      "departure_date": "2026-09-12",
+      "return_date": "2026-09-16",
+      "latest_visible_result_type": "flights"
+    }
+  },
+  {
+    "id": "flight_005",
+    "category": "flight",
+    "messages": [
+      "I want to fly from EMA to Paris on 12 September and return on 16 September for 2 passengers"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "origin": "EMA",
+      "destination": "CDG",
+      "departure_date": "2026-09-12",
+      "return_date": "2026-09-16",
+      "passenger_count": 2,
+      "latest_visible_result_type": "flights"
+    }
+  },
+  {
+    "id": "hotel_001",
+    "category": "hotel",
+    "messages": [
+      "I want to book a hotel in London Hyde Park preferably",
+      "I want to leave on the 11th and come back on the 15th"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "London",
+      "check_in_date": "2026-08-11",
+      "check_out_date": "2026-08-15",
+      "latest_visible_result_type": "hotels"
+    }
+  },
+  {
+    "id": "hotel_002",
+    "category": "hotel",
+    "messages": [
+      "Find me a hotel in London near Big Ben",
+      "3 nights from the 11th"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "London",
+      "check_in_date": "2026-08-11",
+      "check_out_date": "2026-08-14",
+      "nights": 3,
+      "latest_visible_result_type": "hotels"
+    }
+  },
+  {
+    "id": "hotel_003",
+    "category": "hotel",
+    "messages": [
+      "I need accommodation in Paris from 12 September to 16 September"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "Paris",
+      "check_in_date": "2026-09-12",
+      "check_out_date": "2026-09-16",
+      "latest_visible_result_type": "hotels"
+    }
+  },
+  {
+    "id": "hotel_004",
+    "category": "hotel",
+    "messages": [
+      "Show me stays in Rome from 1 October to 4 October for 2 guests"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "Rome",
+      "check_in_date": "2026-10-01",
+      "check_out_date": "2026-10-04",
+      "guest_count": 2,
+      "latest_visible_result_type": "hotels"
+    }
+  },
+  {
+    "id": "hotel_005",
+    "category": "hotel",
+    "messages": [
+      "I need a hotel in Barcelona for 3 nights",
+      "from the 15th"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "Barcelona",
+      "check_in_date": "2026-08-15",
+      "check_out_date": "2026-08-18",
+      "nights": 3,
+      "latest_visible_result_type": "hotels"
+    }
+  },
+  {
+    "id": "package_001",
+    "category": "package",
+    "messages": [
+      "I want a full package to London within 1000 pounds",
+      "11th and back on 15"
+    ],
+    "expected": {
+      "intent": "package_search",
+      "origin": "EMA",
+      "destination": "LHR",
+      "destination_city": "London",
+      "departure_date": "2026-08-11",
+      "return_date": "2026-08-15",
+      "budget": 1000,
+      "latest_visible_result_type": "packages"
+    }
+  },
+  {
+    "id": "package_002",
+    "category": "package",
+    "messages": [
+      "Can you give me a flight and hotel package with my budget?"
+    ],
+    "expected": {
+      "intent": "clarification"
+    }
+  },
+  {
+    "id": "package_003",
+    "category": "package",
+    "messages": [
+      "I want to go skiing for 3 nights",
+      "same day next week",
+      "I like Erzurum, is there a full package?"
+    ],
+    "expected": {
+      "intent": "package_search",
+      "origin": "EMA",
+      "destination": "ERZ",
+      "destination_city": "Erzurum",
+      "nights": 3,
+      "latest_visible_result_type": "packages"
+    }
+  },
+  {
+    "id": "package_004",
+    "category": "package",
+    "messages": [
+      "I want to go to Lyon for 3 nights",
+      "I will go on 1 September",
+      "show me the full trip price with hotel"
+    ],
+    "expected": {
+      "intent": "package_search",
+      "origin": "EMA",
+      "destination": "LYS",
+      "destination_city": "Lyon",
+      "departure_date": "2026-09-01",
+      "return_date": "2026-09-04",
+      "nights": 3,
+      "latest_visible_result_type": "packages"
+    }
+  },
+  {
+    "id": "package_005",
+    "category": "package",
+    "messages": [
+      "Find a travel package to Paris from 12 September to 15 September"
+    ],
+    "expected": {
+      "intent": "package_search",
+      "origin": "EMA",
+      "destination": "CDG",
+      "destination_city": "Paris",
+      "departure_date": "2026-09-12",
+      "return_date": "2026-09-15",
+      "latest_visible_result_type": "packages"
+    }
+  },
+  {
+    "id": "package_006",
+    "category": "package",
+    "messages": [
+      "I want a beach package for 4 nights",
+      "let's choose the place first",
+      "I like Hurghada",
+      "go on 12 September",
+      "find hotel and flight together"
+    ],
+    "expected": {
+      "intent": "package_search",
+      "origin": "EMA",
+      "destination": "HRG",
+      "destination_city": "Hurghada",
+      "departure_date": "2026-09-12",
+      "return_date": "2026-09-16",
+      "nights": 4,
+      "latest_visible_result_type": "packages"
+    }
+  },
+  {
+    "id": "context_001",
+    "category": "follow_up_context",
+    "messages": [
+      "I need accommodation in Paris from 12 September to 16 September",
+      "which is the cheapest hotel?"
+    ],
+    "expected": {
+      "intent": "hotel_search",
+      "destination_city": "Paris",
+      "latest_visible_result_type": "hotels",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "context_002",
+    "category": "follow_up_context",
+    "messages": [
+      "Find me a flight from EMA to London on 11 August and back on 15 August",
+      "i like this flight"
+    ],
+    "expected": {
+      "intent": "clarification",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "context_003",
+    "category": "follow_up_context",
+    "messages": [
+      "I want to go to Lyon for 3 nights",
+      "I will go on 1 September",
+      "show me the full trip price with hotel",
+      "confirm package 2"
+    ],
+    "expected": {
+      "intent": "cart_update",
+      "selected_option": 2,
+      "latest_visible_result_type": "cart",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "context_004",
+    "category": "follow_up_context",
+    "messages": [
+      "I want to fly to London",
+      "on the 15th"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "destination": "LHR",
+      "departure_date": "2026-08-15",
+      "latest_visible_result_type": "flights",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "context_005",
+    "category": "follow_up_context",
+    "messages": [
+      "I want to go skiing for 3 nights",
+      "let's choose the place first",
+      "not in Europe"
+    ],
+    "expected": {
+      "intent": "destination_discovery",
+      "excluded_region": "Europe",
+      "required_activity": "skiing",
+      "latest_visible_result_type": "destinations",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "context_006",
+    "category": "follow_up_context",
+    "messages": [
+      "I want to go skiing for 3 nights",
+      "let's choose the place first",
+      "I like Beirut"
+    ],
+    "expected": {
+      "intent": "clarification",
+      "origin": "EMA",
+      "destination": "BEY",
+      "nights": 3,
+      "latest_visible_result_type": "flight_clarification",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "voice_001",
+    "category": "voice_style_misrecognition",
+    "messages": [
+      "I want to live on the 11th and come back on the 15th"
+    ],
+    "expected": {
+      "intent": "clarification"
+    }
+  },
+  {
+    "id": "voice_002",
+    "category": "voice_style_misrecognition",
+    "messages": [
+      "I want to fly to London",
+      "I want to live on the 11th and 15"
+    ],
+    "expected": {
+      "intent": "flight_search",
+      "destination": "LHR",
+      "departure_date": "2026-08-11",
+      "return_date": "2026-08-15",
+      "latest_visible_result_type": "flights",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "voice_003",
+    "category": "voice_style_misrecognition",
+    "messages": [
+      "I want to go to Lyon for 3 nights",
+      "I will go on 1 September",
+      "show me the full trip price with hotel",
+      "I like this option option one"
+    ],
+    "expected": {
+      "intent": "cart_update",
+      "selected_option": 1,
+      "latest_visible_result_type": "cart",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "voice_004",
+    "category": "voice_style_misrecognition",
+    "messages": [
+      "I need accommodation in Paris from 12 September to 16 September",
+      "continue with this option option one"
+    ],
+    "expected": {
+      "intent": "hotel_selection",
+      "selected_option": 1,
+      "latest_visible_result_type": "hotel_selected",
+      "context_followup": true
+    }
+  },
+  {
+    "id": "cart_001",
+    "category": "cart_checkout",
+    "messages": [
+      "Find me a flight from EMA to London on 11 August and back on 15 August",
+      "select option 1"
+    ],
+    "expected": {
+      "intent": "flight_selection",
+      "latest_visible_result_type": "flight_selected"
+    }
+  },
+  {
+    "id": "cart_002",
+    "category": "cart_checkout",
+    "messages": [
+      "I need accommodation in Paris from 12 September to 16 September",
+      "select option 1",
+      "yes book it"
+    ],
+    "expected": {
+      "intent": "cart_update",
+      "selected_option": 1,
+      "latest_visible_result_type": "cart",
+      "next_path": "/cart"
+    }
+  },
+  {
+    "id": "cart_003",
+    "category": "cart_checkout",
+    "messages": [
+      "I want to go to Lyon for 3 nights",
+      "I will go on 1 September",
+      "show me the full trip price with hotel",
+      "select package 1",
+      "checkout"
+    ],
+    "expected": {
+      "intent": "checkout",
+      "latest_visible_result_type": "cart",
+      "next_path": "/profile?next=/checkout"
+    }
+  },
+  {
+    "id": "cart_004",
+    "category": "cart_checkout",
+    "messages": [
+      "I want to go to Lyon for 3 nights",
+      "I will go on 1 September",
+      "show me the full trip price with hotel",
+      "select package 1",
+      "yes book it",
+      "thank you"
+    ],
+    "expected": {
+      "intent": "cart_update",
+      "latest_visible_result_type": "cart"
+    }
+  }
+]

@@ -1,0 +1,2349 @@
+[
+  {
+    "id": "florida_holiday_package_paraphrase",
+    "description": "Paraphrased Florida package request should stay broad and ask for exact dates/city.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want a holiday package to Florida from Birmingham in November",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Florida",
+            "destination_type": "region",
+            "destination_candidates": [
+              "MCO",
+              "MIA",
+              "TPA",
+              "FLL"
+            ],
+            "date_text": "in November",
+            "month": "2026-11",
+            "departure_date": null,
+            "return_date": null,
+            "missing_fields": [
+              "exact_dates",
+              "destination_airport_choice"
+            ]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Florida",
+          "month": "2026-11",
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_list_contains": {
+          "destinationCandidates[].airportCode": [
+            "MCO",
+            "MIA",
+            "TPA",
+            "FLL"
+          ]
+        },
+        "expected_pendingAction": null,
+        "expected_response_contains": [
+          "Florida",
+          "exact"
+        ],
+        "forbidden_response_text": [
+          "ISM",
+          "15 Aug",
+          "real flight options"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "orlando_exact_package_from_scratch",
+    "description": "Exact Orlando date and duration from scratch should create a pending package build.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "Plan a 4 night trip to Orlando from Birmingham on the 15th of November",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Orlando",
+            "destination_type": "airport",
+            "destination_code": "MCO",
+            "departure_date": "2026-11-15",
+            "return_date": null,
+            "nights": 4,
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "origin": "BHX",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19"
+        },
+        "expected_response_contains": [
+          "Orlando International Airport",
+          "15 Nov 2026",
+          "19 Nov 2026"
+        ],
+        "forbidden_response_text": [
+          "ISM",
+          "15 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "florida_active_orlando_short_followup",
+    "description": "Pending Florida trip follow-up should resolve Orlando to MCO and preserve November.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 2,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "destinationRegion": {
+          "name": "Florida",
+          "displayName": "Florida",
+          "country": "United States",
+          "type": "region",
+          "candidateCodes": [
+            "MCO",
+            "MIA",
+            "TPA",
+            "FLL"
+          ]
+        },
+        "destinationType": "region",
+        "destinationCandidates": [
+          {
+            "city": "Orlando",
+            "country": "United States",
+            "airportCode": "MCO",
+            "airportName": "Orlando International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "MCO"
+          },
+          {
+            "city": "Miami",
+            "country": "United States",
+            "airportCode": "MIA",
+            "airportName": "Miami International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "MIA"
+          },
+          {
+            "city": "Tampa",
+            "country": "United States",
+            "airportCode": "TPA",
+            "airportName": "Tampa International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "TPA"
+          },
+          {
+            "city": "Fort Lauderdale",
+            "country": "United States",
+            "airportCode": "FLL",
+            "airportName": "Fort Lauderdale-Hollywood International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "FLL"
+          }
+        ],
+        "month": "2026-11",
+        "dates": {
+          "departureDate": null,
+          "returnDate": null,
+          "source": "new_month_only_trip_frame"
+        },
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "month": "2026-11",
+          "missingFields": [
+            "departure_date",
+            "destination_airport_choice"
+          ]
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "Can you make it Orlando, 15th, for 4 nights?",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "destination_text": "Orlando",
+            "destination_type": "city",
+            "destination_candidates": [
+              "MCO"
+            ],
+            "departure_day": 15,
+            "month": "2026-11",
+            "nights": 4,
+            "use_active_trip_state": true,
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "month": "2026-11",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19"
+        },
+        "expected_response_contains": [
+          "Orlando International Airport",
+          "15 Nov 2026",
+          "19 Nov 2026"
+        ],
+        "forbidden_response_text": [
+          "ISM",
+          "15 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "confirm_pending_package_go_ahead",
+    "description": "A go-ahead confirmation should execute the pending package build.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 5,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "selected_region_candidate",
+          "recommendationId": "MCO"
+        },
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "source": "llama_structured_trip_request"
+        },
+        "tripDurationNights": 4,
+        "pendingTripRequest": {
+          "intent": "package_search"
+        },
+        "pendingAction": {
+          "type": "build_package",
+          "origin": "BHX",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "go ahead",
+        "mocked_llama_output": {
+          "tool": "confirm_booking",
+          "arguments": {
+            "confirmed": true,
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "confirm_booking",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages"
+        },
+        "expected_pendingAction": null,
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "MCO",
+            "departureDate": "2026-11-15",
+            "returnDate": "2026-11-19"
+          },
+          {
+            "type": "hotels",
+            "city": "Orlando",
+            "checkInDate": "2026-11-15",
+            "checkOutDate": "2026-11-19"
+          }
+        ],
+        "expected_response_contains": [
+          "package options",
+          "BHX to MCO"
+        ],
+        "forbidden_response_text": [
+          "Florida has several main airport choices",
+          "ISM",
+          "15 Aug"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pending_florida_month_only_followup",
+    "description": "A month-only follow-up should fill month but not invent exact dates.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 1,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "destinationRegion": {
+          "name": "Florida",
+          "displayName": "Florida",
+          "country": "United States",
+          "type": "region",
+          "candidateCodes": [
+            "MCO",
+            "MIA",
+            "TPA",
+            "FLL"
+          ]
+        },
+        "destinationCandidates": [
+          {
+            "city": "Orlando",
+            "country": "United States",
+            "airportCode": "MCO",
+            "airportName": "Orlando International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "MCO"
+          }
+        ],
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "missingFields": [
+            "exact_dates"
+          ]
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "in November",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "date_text": "in November",
+            "month": "2026-11",
+            "departure_date": null,
+            "return_date": null,
+            "use_active_trip_state": true,
+            "missing_fields": [
+              "exact_dates",
+              "destination_airport_choice"
+            ]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Florida",
+          "month": "2026-11",
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_pendingAction": null,
+        "forbidden_response_text": [
+          "1 Nov 2026 to 30 Nov 2026",
+          "15 Aug",
+          "ISM"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pending_florida_day_only_followup",
+    "description": "Day-only follow-up in a pending month context should use November.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 2,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "destinationRegion": {
+          "name": "Florida",
+          "displayName": "Florida",
+          "country": "United States",
+          "type": "region",
+          "candidateCodes": [
+            "MCO",
+            "MIA",
+            "TPA",
+            "FLL"
+          ]
+        },
+        "destinationCandidates": [
+          {
+            "city": "Orlando",
+            "country": "United States",
+            "airportCode": "MCO",
+            "airportName": "Orlando International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "MCO"
+          }
+        ],
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "selected_region_candidate",
+          "recommendationId": "MCO"
+        },
+        "month": "2026-11",
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "month": "2026-11"
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "on the 15th",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "departure_day": 15,
+            "month": "2026-11",
+            "use_active_trip_state": true,
+            "missing_fields": [
+              "return_date"
+            ]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "month": "2026-11",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": null
+        },
+        "expected_pendingAction": null,
+        "forbidden_response_text": [
+          "15 Aug",
+          "ISM"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pending_florida_day_range_followup",
+    "description": "Day range in pending November context should create exact dates and a package pending action.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 2,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "selected_region_candidate",
+          "recommendationId": "MCO"
+        },
+        "month": "2026-11",
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "month": "2026-11"
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "from the 15th till the 20th",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "departure_day": 15,
+            "return_day": 20,
+            "month": "2026-11",
+            "use_active_trip_state": true,
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-20",
+          "tripDurationNights": 5
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-20"
+        },
+        "forbidden_response_text": [
+          "15 Aug",
+          "20 Aug",
+          "ISM"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "egypt_birmingham_december_broad_package",
+    "description": "Non-Florida broad destination should expose whether the router/schema/backend can represent regional candidates beyond Florida.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want a package to Egypt from Birmingham in December",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Egypt",
+            "destination_type": "region",
+            "destination_candidates": [
+              "HRG",
+              "SSH",
+              "CAI"
+            ],
+            "date_text": "in December",
+            "month": "2026-12",
+            "departure_date": null,
+            "return_date": null,
+            "missing_fields": [
+              "exact_dates",
+              "destination_airport_choice"
+            ]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Egypt",
+          "month": "2026-12",
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_list_contains": {
+          "destinationCandidates[].airportCode": [
+            "HRG",
+            "SSH",
+            "CAI"
+          ]
+        },
+        "expected_pendingAction": null,
+        "forbidden_response_text": [
+          "15 Aug",
+          "real flight options"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "egypt_hurghada_followup_from_pending_region",
+    "description": "Pending Egypt region follow-up should select Hurghada and build a pending package action.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 2,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "destinationRegion": {
+          "name": "Egypt",
+          "displayName": "Egypt",
+          "country": "Egypt",
+          "type": "region",
+          "candidateCodes": [
+            "HRG",
+            "SSH",
+            "CAI"
+          ]
+        },
+        "destinationType": "region",
+        "destinationCandidates": [
+          {
+            "city": "Hurghada",
+            "country": "Egypt",
+            "airportCode": "HRG",
+            "airportName": "Hurghada International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "HRG"
+          },
+          {
+            "city": "Sharm El Sheikh",
+            "country": "Egypt",
+            "airportCode": "SSH",
+            "airportName": "Sharm El Sheikh International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "SSH"
+          },
+          {
+            "city": "Cairo",
+            "country": "Egypt",
+            "airportCode": "CAI",
+            "airportName": "Cairo International Airport",
+            "source": "broad_destination_candidate",
+            "recommendationId": "CAI"
+          }
+        ],
+        "month": "2026-12",
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "month": "2026-12"
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "Hurghada from the 10th for 5 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "destination_text": "Hurghada",
+            "destination_type": "city",
+            "destination_candidates": [
+              "HRG"
+            ],
+            "departure_day": 10,
+            "month": "2026-12",
+            "nights": 5,
+            "use_active_trip_state": true,
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "HRG",
+          "month": "2026-12",
+          "dates.departureDate": "2026-12-10",
+          "dates.returnDate": "2026-12-15",
+          "tripDurationNights": 5
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "HRG",
+          "departureDate": "2026-12-10",
+          "returnDate": "2026-12-15"
+        },
+        "forbidden_response_text": [
+          "15 Aug",
+          "London package"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "exact_paris_package_birmingham_dates",
+    "description": "Normal exact destination package request should extract direct route and exact dates.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want a package from Birmingham to Paris from 12 September to 16 September",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Paris",
+            "destination_type": "airport",
+            "destination_code": "CDG",
+            "departure_date": "2026-09-12",
+            "return_date": "2026-09-16",
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "CDG",
+          "dates.departureDate": "2026-09-12",
+          "dates.returnDate": "2026-09-16",
+          "tripDurationNights": 4
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "origin": "BHX",
+          "destination": "CDG",
+          "departureDate": "2026-09-12",
+          "returnDate": "2026-09-16"
+        },
+        "forbidden_response_text": [
+          "LHR",
+          "London package",
+          "15 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "polluted_london_package_then_exact_paris",
+    "description": "Fresh Paris package request should clear stale London package state.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 9,
+        "origin": {
+          "city": "East Midlands",
+          "country": "United Kingdom",
+          "airportCode": "EMA",
+          "airportName": "East Midlands Airport",
+          "source": "stale_state"
+        },
+        "selectedDestination": {
+          "city": "London",
+          "country": "United Kingdom",
+          "airportCode": "LHR",
+          "airportName": "London Heathrow Airport",
+          "source": "stale_state",
+          "recommendationId": "LHR"
+        },
+        "dates": {
+          "departureDate": "2026-08-15",
+          "returnDate": "2026-08-19",
+          "source": "stale_state"
+        },
+        "tripDurationNights": 4,
+        "latestPackageOptions": [
+          {
+            "optionNumber": 1,
+            "destinationAirportCode": "LHR",
+            "destinationCity": "London",
+            "totalPrice": 300,
+            "currency": "GBP"
+          }
+        ],
+        "selectedPackageOption": {
+          "optionNumber": 1,
+          "destinationAirportCode": "LHR"
+        },
+        "latestVisibleResultType": "packages"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want a package from Birmingham to Paris from 12 September to 16 September",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Paris",
+            "destination_type": "airport",
+            "destination_code": "CDG",
+            "departure_date": "2026-09-12",
+            "return_date": "2026-09-16",
+            "missing_fields": []
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "CDG",
+          "dates.departureDate": "2026-09-12",
+          "dates.returnDate": "2026-09-16",
+          "latestPackageOptions": []
+        },
+        "expected_cleared_fields": [
+          "latestPackageOptions",
+          "selectedPackageOption"
+        ],
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "CDG",
+          "departureDate": "2026-09-12",
+          "returnDate": "2026-09-16"
+        },
+        "forbidden_response_text": [
+          "London package",
+          "LHR to",
+          "15 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "orlando_package_results_cheapest_followup",
+    "description": "After Orlando package cards are visible, a cheapest-package question should answer from current results without replanning or provider calls.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 22,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "evaluation_active_trip"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "evaluation_active_trip"
+        },
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "source": "evaluation_active_trip"
+        },
+        "tripDurationNights": 4,
+        "pendingTripRequest": {
+          "intent": "package_search"
+        },
+        "requestedProducts": [
+          "flights",
+          "hotels"
+        ],
+        "latestVisibleResultType": "packages",
+        "status": "package_options_ready",
+        "latestPackageOptions": [
+          {
+            "packageId": "PKG-MCO-1",
+            "optionNumber": 1,
+            "destinationCity": "Orlando",
+            "destinationAirportCode": "MCO",
+            "totalPrice": 713.3,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "flight": {
+              "offerId": "flight-mco-1",
+              "airline": "Duffel Airways",
+              "origin": "BHX",
+              "destination": "MCO",
+              "departureDate": "2026-11-15",
+              "returnDate": "2026-11-19",
+              "departureTime": "08:30",
+              "returnTime": "11:45",
+              "cabin": "economy",
+              "stops": 0,
+              "duration": "9h 15m",
+              "price": 360.0,
+              "currency": "GBP",
+              "provider": "evaluation_flight_provider"
+            },
+            "hotel": {
+              "hotelId": "hotel-mco-1",
+              "hotelName": "Rosen Inn International Near The Parks",
+              "city": "Orlando",
+              "checkInDate": "2026-11-15",
+              "checkOutDate": "2026-11-19",
+              "nights": 4,
+              "rating": 4.0,
+              "address": "Orlando",
+              "boardType": "Room only",
+              "roomName": "Standard room",
+              "price": 353.3,
+              "currency": "GBP",
+              "provider": "evaluation_hotel_provider"
+            },
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight and hotel"
+          },
+          {
+            "packageId": "PKG-MCO-4",
+            "optionNumber": 4,
+            "destinationCity": "Orlando",
+            "destinationAirportCode": "MCO",
+            "totalPrice": 715.39,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "flight": {
+              "offerId": "flight-mco-4",
+              "airline": "Duffel Airways",
+              "origin": "BHX",
+              "destination": "MCO",
+              "departureDate": "2026-11-15",
+              "returnDate": "2026-11-19",
+              "price": 362.09,
+              "currency": "GBP",
+              "provider": "evaluation_flight_provider"
+            },
+            "hotel": {
+              "hotelId": "hotel-mco-4",
+              "hotelName": "Orlando Value Resort",
+              "city": "Orlando",
+              "checkInDate": "2026-11-15",
+              "checkOutDate": "2026-11-19",
+              "nights": 4,
+              "price": 353.3,
+              "currency": "GBP",
+              "provider": "evaluation_hotel_provider"
+            },
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight and hotel"
+          }
+        ]
+      }
+    },
+    "turns": [
+      {
+        "user_message": "which is the cheapest?",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "select_cheapest",
+            "result_type": "package",
+            "use_visible_results": true,
+            "use_current_selection": false
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages"
+        },
+        "expected_response_contains": [
+          "cheapest option",
+          "Package 1",
+          "713.30",
+          "Rosen Inn International Near The Parks"
+        ],
+        "forbidden_response_text": [
+          "provide your exact departure",
+          "Please provide your exact departure",
+          "ISM",
+          "15 Aug",
+          "19 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      },
+      {
+        "user_message": "compare them",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "compare_results",
+            "result_type": "package",
+            "use_visible_results": true,
+            "use_current_selection": false
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages"
+        },
+        "expected_response_contains": [
+          "package options",
+          "total price"
+        ],
+        "forbidden_response_text": [
+          "provide your exact departure",
+          "ISM",
+          "15 Aug",
+          "19 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      },
+      {
+        "user_message": "show me the first one",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "show_option",
+            "result_type": "package",
+            "option_number": 1,
+            "use_visible_results": true,
+            "use_current_selection": false
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages",
+          "currentPackageOption.optionNumber": 1
+        },
+        "expected_response_contains": [
+          "Package 1",
+          "Rosen Inn International Near The Parks"
+        ],
+        "forbidden_response_text": [
+          "provide your exact departure",
+          "ISM",
+          "15 Aug",
+          "19 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "orlando_package_results_add_current_visible_package",
+    "description": "After a current package option is selected, natural booking language should add that visible package to cart through handle_visible_results.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 23,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "evaluation_active_trip"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "evaluation_active_trip"
+        },
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "source": "evaluation_active_trip"
+        },
+        "tripDurationNights": 4,
+        "pendingTripRequest": {
+          "intent": "package_search"
+        },
+        "requestedProducts": [
+          "flights",
+          "hotels"
+        ],
+        "latestVisibleResultType": "packages",
+        "status": "package_options_ready",
+        "currentPackageOption": {
+          "packageId": "PKG-MCO-1",
+          "optionNumber": 1,
+          "destinationCity": "Orlando",
+          "destinationAirportCode": "MCO",
+          "totalPrice": 713.3,
+          "currency": "GBP",
+          "nights": 4,
+          "passengers": 1,
+          "rooms": 1,
+          "flight": {
+            "offerId": "flight-mco-1",
+            "airline": "Duffel Airways",
+            "origin": "BHX",
+            "destination": "MCO",
+            "departureDate": "2026-11-15",
+            "returnDate": "2026-11-19",
+            "departureTime": "08:30",
+            "returnTime": "11:45",
+            "cabin": "economy",
+            "stops": 0,
+            "duration": "9h 15m",
+            "price": 360.0,
+            "currency": "GBP",
+            "provider": "evaluation_flight_provider"
+          },
+          "hotel": {
+            "hotelId": "hotel-mco-1",
+            "hotelName": "Rosen Inn International Near The Parks",
+            "city": "Orlando",
+            "checkInDate": "2026-11-15",
+            "checkOutDate": "2026-11-19",
+            "nights": 4,
+            "rating": 4.0,
+            "address": "Orlando",
+            "boardType": "Room only",
+            "roomName": "Standard room",
+            "price": 353.3,
+            "currency": "GBP",
+            "provider": "evaluation_hotel_provider"
+          },
+          "reasons": [
+            "Includes return flight and hotel stay"
+          ],
+          "warnings": [],
+          "providerSummary": "Flight and hotel"
+        },
+        "latestPackageOptions": [
+          {
+            "packageId": "PKG-MCO-1",
+            "optionNumber": 1,
+            "destinationCity": "Orlando",
+            "destinationAirportCode": "MCO",
+            "totalPrice": 713.3,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "flight": {
+              "offerId": "flight-mco-1",
+              "airline": "Duffel Airways",
+              "origin": "BHX",
+              "destination": "MCO",
+              "departureDate": "2026-11-15",
+              "returnDate": "2026-11-19",
+              "departureTime": "08:30",
+              "returnTime": "11:45",
+              "cabin": "economy",
+              "stops": 0,
+              "duration": "9h 15m",
+              "price": 360.0,
+              "currency": "GBP",
+              "provider": "evaluation_flight_provider"
+            },
+            "hotel": {
+              "hotelId": "hotel-mco-1",
+              "hotelName": "Rosen Inn International Near The Parks",
+              "city": "Orlando",
+              "checkInDate": "2026-11-15",
+              "checkOutDate": "2026-11-19",
+              "nights": 4,
+              "rating": 4.0,
+              "address": "Orlando",
+              "boardType": "Room only",
+              "roomName": "Standard room",
+              "price": 353.3,
+              "currency": "GBP",
+              "provider": "evaluation_hotel_provider"
+            },
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight and hotel"
+          }
+        ]
+      }
+    },
+    "turns": [
+      {
+        "user_message": "okay book it",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "add_selected_to_cart",
+            "result_type": "package",
+            "use_visible_results": true,
+            "use_current_selection": true
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "cart",
+          "selectedPackageOption.optionNumber": 1,
+          "cartStatus": "active"
+        },
+        "expected_response_contains": [
+          "added package option 1",
+          "cart"
+        ],
+        "forbidden_response_text": [
+          "provide your exact departure",
+          "Please provide your exact departure",
+          "ISM",
+          "15 Aug",
+          "19 Aug"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "stale_orlando_package_then_new_skiing_discovery",
+    "description": "A new broad skiing request after an Orlando package/cart flow should clear stale package destination context.",
+    "initial_state": {
+      "active_trip": {
+        "origin": {
+          "city": "Birmingham",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "country": "United Kingdom",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "selected_region_candidate"
+        },
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "source": "old_package_flow"
+        },
+        "tripDurationNights": 4,
+        "pendingTripRequest": {
+          "intent": "package_search"
+        },
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "packages",
+        "status": "package_options_ready",
+        "latestPackageOptions": [
+          {
+            "optionNumber": 1,
+            "destinationAirportCode": "MCO",
+            "destinationCity": "Orlando",
+            "totalPrice": 714.08,
+            "currency": "GBP"
+          }
+        ],
+        "currentPackageOption": {
+          "optionNumber": 1,
+          "destinationAirportCode": "MCO"
+        },
+        "selectedPackageOption": {
+          "optionNumber": 1,
+          "destinationAirportCode": "MCO"
+        },
+        "cart": {
+          "items": [
+            {
+              "itemType": "package"
+            }
+          ]
+        }
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "destination_code": null,
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date",
+              "destination"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination": null,
+          "destinationRegion": null,
+          "destinationCandidates": [],
+          "tripFrame": "broad_activity_trip",
+          "tripDurationNights": 3,
+          "latestPackageOptions": [],
+          "currentPackageOption": null,
+          "selectedPackageOption": null,
+          "pendingAction.type": "suggest_destinations"
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        },
+        "expected_cleared_fields": [
+          "selectedDestination",
+          "latestPackageOptions",
+          "currentPackageOption",
+          "selectedPackageOption"
+        ],
+        "expected_response_contains": [
+          "skiing",
+          "3-night"
+        ],
+        "forbidden_response_text": [
+          "Orlando",
+          "MCO",
+          "provide your exact departure and return dates"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      },
+      {
+        "user_message": "maybe next month and from east midlands airport",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "origin_text": "East Midlands Airport",
+            "origin_code": "EMA",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "destination_code": null,
+            "month": "2026-09",
+            "date_text": "next month",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "selectedDestination": null,
+          "destinationRegion": null,
+          "destinationCandidates": [],
+          "tripFrame": "broad_activity_trip",
+          "tripDurationNights": 3,
+          "month": "2026-09",
+          "latestPackageOptions": [],
+          "currentPackageOption": null,
+          "selectedPackageOption": null,
+          "pendingAction.type": "suggest_destinations"
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        },
+        "expected_response_contains": [
+          "skiing",
+          "3-night",
+          "September"
+        ],
+        "forbidden_response_text": [
+          "Florida",
+          "Orlando",
+          "MCO",
+          "provide your exact departure and return dates"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      },
+      {
+        "user_message": "on the 15th",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "destination_code": null,
+            "departure_day": 15,
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "missing_fields": [],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "selectedDestination": null,
+          "dates.departureDate": "2026-09-15",
+          "dates.returnDate": "2026-09-18",
+          "tripDurationNights": 3,
+          "pendingAction": null
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_response_contains": [
+          "destination ideas"
+        ],
+        "forbidden_response_text": [
+          "Florida",
+          "Orlando",
+          "MCO",
+          "provide your exact departure and return dates"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "broad_skiing_this_month_then_confirmation",
+    "description": "Live browser broad skiing flow should merge this-month date and confirmation into destination discovery.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      },
+      "active_trip": {
+        "origin": {
+          "city": "Birmingham",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "country": "United Kingdom",
+          "source": "stale_package_flow"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "stale_package_flow"
+        },
+        "month": "2026-11",
+        "dateText": "in november",
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "source": "stale_package_flow"
+        },
+        "latestVisibleResultType": "packages",
+        "latestPackageOptions": [
+          {
+            "optionNumber": 1,
+            "destinationAirportCode": "MCO"
+          }
+        ],
+        "selectedPackageOption": {
+          "optionNumber": 1,
+          "destinationAirportCode": "MCO"
+        }
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "destination_code": null,
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date",
+              "destination"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination": null,
+          "destinationRegion": null,
+          "tripFrame": "broad_activity_trip",
+          "tripDurationNights": 3,
+          "month": null,
+          "latestPackageOptions": [],
+          "selectedPackageOption": null,
+          "pendingAction.type": "suggest_destinations"
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        },
+        "expected_response_contains": [
+          "skiing",
+          "3-night"
+        ],
+        "forbidden_response_text": [
+          "November",
+          "Florida",
+          "Orlando",
+          "MCO",
+          "provide your exact departure and return dates"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      },
+      {
+        "user_message": "19th of this month",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "destination_code": null,
+            "date_text": "19th of this month",
+            "departure_day": 19,
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "missing_fields": [],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination": null,
+          "dates.departureDate": "2026-08-19",
+          "dates.returnDate": "2026-08-22",
+          "tripDurationNights": 3,
+          "pendingAction": null
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_response_contains": [
+          "destination ideas"
+        ],
+        "forbidden_response_text": [
+          "Please choose a flight option first",
+          "November",
+          "Florida",
+          "Orlando",
+          "MCO"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      },
+      {
+        "user_message": "yes please",
+        "mocked_llama_output": {
+          "tool": "confirm_booking",
+          "arguments": {
+            "confirmed": true,
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "confirm_booking",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination": null,
+          "dates.departureDate": "2026-08-19",
+          "dates.returnDate": "2026-08-22",
+          "tripDurationNights": 3
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_response_contains": [
+          "choose one of the destination options"
+        ],
+        "forbidden_response_text": [
+          "Please choose a flight option first",
+          "Florida",
+          "Orlando",
+          "MCO"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hotel_london_budget_date_followup",
+    "description": "Pending London hotel budget request should merge structured check-in date and nights.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to book an hotel in london and my budget is 600 pounds",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "hotel",
+            "intent": "hotel_search",
+            "destination_text": "London",
+            "destination_type": "city",
+            "budget_amount": 600,
+            "budget_currency": "GBP",
+            "missing_fields": [
+              "check_in_date",
+              "nights"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingHotelRequest.city": "London",
+          "pendingHotelRequest.maxBudget": 600,
+          "pendingHotelRequest.checkInDate": null
+        },
+        "expected_response_contains": [
+          "When do you want to check in"
+        ],
+        "forbidden_provider_calls": [
+          "hotels"
+        ]
+      },
+      {
+        "user_message": "the 18th of next month and i want to stay for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "hotel",
+            "intent": "hotel_search",
+            "destination_text": "London",
+            "destination_type": "city",
+            "date_text": "18th of next month",
+            "departure_day": 18,
+            "nights": 3,
+            "budget_amount": 600,
+            "budget_currency": "GBP",
+            "missing_fields": [],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingHotelRequest": null,
+          "latestVisibleResultType": "hotels"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "hotels",
+            "city": "London",
+            "checkInDate": "2026-09-18",
+            "checkOutDate": "2026-09-21"
+          }
+        ],
+        "expected_response_contains": [
+          "hotel option"
+        ],
+        "forbidden_response_text": [
+          "When do you want to check in"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flight_to_london_default_origin_invariant",
+    "description": "Flight to London should keep default EMA origin even if Llama collapses route to LHR to LHR.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "find flights to london",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "flight_search",
+            "origin_text": "London",
+            "origin_code": "LHR",
+            "destination_text": "London",
+            "destination_type": "city",
+            "destination_code": "LHR",
+            "missing_fields": [
+              "departure_date",
+              "return_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "selectedDestination.airportCode": "LHR"
+        },
+        "expected_response_contains": [
+          "East Midlands Airport",
+          "London Heathrow Airport"
+        ],
+        "forbidden_response_text": [
+          "LHR to LHR"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "clarification_destination_this_month_resume",
+    "description": "Pending skiing destination discovery should resume when a clarification answer supplies a future date.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "tripDurationNights": 3,
+          "dates.departureDate": null
+        },
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      },
+      {
+        "user_message": "19th of this month",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "2026-08-19",
+          "return_date": null,
+          "nights": null
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "dates.departureDate": "2026-08-19",
+          "dates.returnDate": "2026-08-22",
+          "latestVisibleResultType": "destinations"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "destinations"
+          }
+        ],
+        "expected_response_contains": [
+          "destination ideas"
+        ],
+        "forbidden_response_text": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": null
+      }
+    ]
+  },
+  {
+    "id": "clarification_destination_day_only_resume",
+    "description": "Pending skiing destination discovery should resume from a day-only clarification answer.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      },
+      {
+        "user_message": "on the 15th",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "2026-08-15",
+          "return_date": null,
+          "nights": null
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "dates.departureDate": "2026-08-15",
+          "dates.returnDate": "2026-08-18",
+          "latestVisibleResultType": "destinations"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "destinations"
+          }
+        ],
+        "forbidden_response_text": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": null
+      }
+    ]
+  },
+  {
+    "id": "clarification_hotel_date_resume",
+    "description": "Pending hotel search should resume when the clarification answer supplies check-in and nights.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to book a hotel in London",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "hotel",
+            "intent": "hotel_search",
+            "destination_text": "London",
+            "destination_type": "city",
+            "missing_fields": [
+              "check_in_date",
+              "nights"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingHotelRequest.city": "London"
+        },
+        "expected_response_contains": [
+          "When do you want to check in"
+        ],
+        "forbidden_provider_calls": [
+          "hotels"
+        ]
+      },
+      {
+        "user_message": "the 18th of next month and i want to stay for 3 nights",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "2026-09-18",
+          "return_date": null,
+          "nights": 3
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "pendingHotelRequest": null,
+          "latestVisibleResultType": "hotels"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "hotels",
+            "city": "London",
+            "checkInDate": "2026-09-18",
+            "checkOutDate": "2026-09-21"
+          }
+        ],
+        "forbidden_response_text": [
+          "When do you want to check in"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "clarification_loop_guard_non_answer",
+    "description": "A repeated unanswered clarification should not return byte-identical text.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      },
+      {
+        "user_message": "not sure",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": false
+        },
+        "expected_tool": "general_help",
+        "expected_response_contains": [
+          "choose one of these"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      }
+    ]
+  },
+  {
+    "id": "clarification_rejects_past_date",
+    "description": "A model-proposed past date must be rejected and must not execute a provider call.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      },
+      {
+        "user_message": "that date",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "2026-08-01"
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "dates.departureDate": null
+        },
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages",
+          "destinations"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      }
+    ]
+  },
+  {
+    "id": "clarification_rejects_malformed_date",
+    "description": "A malformed model-proposed date must be rejected without crashing or executing providers.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      },
+      {
+        "user_message": "the eighteenth",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "18/09/2026"
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "dates.departureDate": null
+        },
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages",
+          "destinations"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        }
+      }
+    ]
+  }
+]

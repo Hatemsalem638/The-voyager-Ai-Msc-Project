@@ -1,0 +1,60 @@
+Voyage AI - Run Commands
+
+Use two separate VS Code terminals.
+
+========================
+Terminal 1: Backend
+========================
+
+cd backend
+.\.venv\Scripts\activate
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+Backend URL:
+http://127.0.0.1:8000
+
+FastAPI Docs:
+http://127.0.0.1:8000/docs
+
+
+========================
+Terminal 2: Frontend
+========================
+
+cd frontend
+npm run dev
+
+Frontend URL:
+http://localhost:5173
+
+If 5173 is busy, use the URL shown by Vite, for example:
+http://127.0.0.1:5174
+
+
+========================
+Important
+========================
+
+Make sure Ollama is installed and the Llama model is available:
+
+ollama list
+
+If llama3.1:8b-instruct-q4_0 is missing, run:
+
+ollama pull llama3.1:8b-instruct-q4_0
+
+
+========================
+Test Message
+========================
+
+Use this in the website chat:
+
+I want to fly from London Heathrow to New York on 12 September 2026 and return on 19 September 2026. Economy, no stops.
+
+Then test follow-up questions:
+
+which is the cheapest?
+show option 2
+I like option 2
+confirm

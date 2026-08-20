@@ -1,0 +1,283 @@
+[
+  {
+    "id": "florida_birmingham_november_fresh",
+    "description": "Fresh-session Florida package request should preserve November context, resolve Orlando to MCO, and execute the pending package build only after confirmation.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want go on a trip to florida from birmingham in november",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Florida",
+            "destination_type": "region",
+            "destination_candidates": ["MCO", "MIA", "TPA", "FLL"],
+            "date_text": "in november",
+            "month": "2026-11",
+            "departure_date": null,
+            "return_date": null,
+            "missing_fields": ["exact_dates", "destination_airport_choice"]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Florida",
+          "month": "2026-11",
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_list_contains": {
+          "destinationCandidates[].airportCode": ["MCO", "MIA", "TPA", "FLL"]
+        },
+        "expected_pendingAction": null,
+        "expected_response_contains": ["exact departure", "Florida"],
+        "forbidden_response_text": ["15 Aug", "19 Aug", "ISM", "real flight options"],
+        "forbidden_provider_calls": ["flights", "hotels"]
+      },
+      {
+        "user_message": "i would like to go to Orlando on the 15th and stay there for 4 nights",
+        "mocked_llama_output": {
+          "tool": "search_hotels",
+          "arguments": {
+            "destination_city": "Orlando",
+            "check_in_date": "2026-08-15",
+            "check_out_date": "2026-08-19",
+            "nights": 4
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_tools": ["prepare_trip_request", "search_hotels"],
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "selectedDestination.city": "Orlando",
+          "month": "2026-11",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "origin": "BHX",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "expected_response_contains": ["Orlando International Airport", "15 Nov 2026", "19 Nov 2026"],
+        "forbidden_response_text": ["ISM", "15 Aug 2026", "19 Aug 2026"],
+        "forbidden_provider_calls": ["flights", "hotels"]
+      },
+      {
+        "user_message": "yes please",
+        "mocked_llama_output": {
+          "tool": "confirm_booking",
+          "arguments": {
+            "confirmed": true,
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "confirm_booking",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages"
+        },
+        "expected_pendingAction": null,
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "MCO",
+            "departureDate": "2026-11-15",
+            "returnDate": "2026-11-19"
+          },
+          {
+            "type": "hotels",
+            "city": "Orlando",
+            "checkInDate": "2026-11-15",
+            "checkOutDate": "2026-11-19"
+          }
+        ],
+        "expected_response_contains": ["package options", "BHX to MCO"],
+        "forbidden_response_text": ["Florida has several main airport choices", "ISM", "15 Aug", "19 Aug"]
+      }
+    ]
+  },
+  {
+    "id": "florida_birmingham_november_polluted",
+    "description": "Polluted-session variant starts with stale ISM/August/package state and verifies the new Florida request clears or corrects it.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      },
+      "active_trip": {
+        "revision": 7,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "stale_state"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "ISM",
+          "airportName": "Kissimmee Gateway Airport",
+          "source": "stale_state"
+        },
+        "dates": {
+          "departureDate": "2026-08-15",
+          "returnDate": "2026-08-19",
+          "source": "stale_state"
+        },
+        "month": "2026-08",
+        "tripDurationNights": 4,
+        "pendingTripRequest": {
+          "intent": "package_search"
+        },
+        "requestedProducts": ["packages"],
+        "latestPackageOptions": [
+          {
+            "optionNumber": 1,
+            "destinationAirportCode": "ISM",
+            "destinationCity": "Orlando",
+            "totalPrice": 999,
+            "currency": "GBP"
+          }
+        ],
+        "latestVisibleResultType": "packages"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "i want go on a trip to florida from birmingham in november",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Florida",
+            "destination_type": "region",
+            "destination_candidates": ["MCO", "MIA", "TPA", "FLL"],
+            "date_text": "in november",
+            "month": "2026-11",
+            "departure_date": null,
+            "return_date": null,
+            "missing_fields": ["exact_dates", "destination_airport_choice"]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination": null,
+          "destinationRegion.name": "Florida",
+          "month": "2026-11",
+          "dates.departureDate": null,
+          "dates.returnDate": null,
+          "latestPackageOptions": []
+        },
+        "expected_list_contains": {
+          "destinationCandidates[].airportCode": ["MCO", "MIA", "TPA", "FLL"]
+        },
+        "expected_cleared_fields": ["selectedDestination", "dates.departureDate", "dates.returnDate", "latestPackageOptions"],
+        "expected_pendingAction": null,
+        "expected_response_contains": ["exact departure", "Florida"],
+        "forbidden_response_text": ["ISM", "15 Aug", "19 Aug", "real flight options"],
+        "forbidden_provider_calls": ["flights", "hotels"]
+      },
+      {
+        "user_message": "i would like to go to Orlando on the 15th and stay there for 4 nights",
+        "mocked_llama_output": {
+          "tool": "search_hotels",
+          "arguments": {
+            "destination_city": "Orlando",
+            "check_in_date": "2026-08-15",
+            "check_out_date": "2026-08-19",
+            "nights": 4
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_tools": ["prepare_trip_request", "search_hotels"],
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "month": "2026-11",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "tripDurationNights": 4
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "MCO",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19"
+        },
+        "expected_response_contains": ["Orlando International Airport", "15 Nov 2026", "19 Nov 2026"],
+        "forbidden_response_text": ["ISM", "15 Aug 2026", "19 Aug 2026"],
+        "forbidden_provider_calls": ["flights", "hotels"]
+      },
+      {
+        "user_message": "yes please",
+        "mocked_llama_output": {
+          "tool": "confirm_booking",
+          "arguments": {
+            "confirmed": true,
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "confirm_booking",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MCO",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19",
+          "latestVisibleResultType": "packages"
+        },
+        "expected_pendingAction": null,
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "MCO",
+            "departureDate": "2026-11-15",
+            "returnDate": "2026-11-19"
+          },
+          {
+            "type": "hotels",
+            "city": "Orlando",
+            "checkInDate": "2026-11-15",
+            "checkOutDate": "2026-11-19"
+          }
+        ],
+        "expected_response_contains": ["package options", "BHX to MCO"],
+        "forbidden_response_text": ["Florida has several main airport choices", "ISM", "15 Aug", "19 Aug"]
+      }
+    ]
+  }
+]

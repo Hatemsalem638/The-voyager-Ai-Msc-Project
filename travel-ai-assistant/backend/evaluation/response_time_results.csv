@@ -1,0 +1,25 @@
+case_id,iteration,elapsed_ms,success,final_reply
+simple_help,1,77.82,True,I could not find a complete mock package for the requested destination.
+simple_help,2,44.61,True,I could not find a complete mock package for the requested destination.
+simple_help,3,43.55,True,I could not find a complete mock package for the requested destination.
+flight_search,1,43.13,True,I can use East Midlands Airport (EMA) as your origin and London (LHR) as your destination. Please provide your departure date and return date.
+flight_search,2,40.43,True,I can use East Midlands Airport (EMA) as your origin and London (LHR) as your destination. Please provide your departure date and return date.
+flight_search,3,44.86,True,I can use East Midlands Airport (EMA) as your origin and London (LHR) as your destination. Please provide your departure date and return date.
+hotel_search,1,45.56,True,I found 3 mock fallback hotel option(s).
+hotel_search,2,41.78,True,I found 3 mock fallback hotel option(s).
+hotel_search,3,43.43,True,I found 3 mock fallback hotel option(s).
+package_search,1,45.10,True,"Got it - I'll use 11 Aug 2026 to 15 Aug 2026, a budget of GBP 11. Where would you like to go?"
+package_search,2,45.89,True,"Got it - I'll use 11 Aug 2026 to 15 Aug 2026, a budget of GBP 11. Where would you like to go?"
+package_search,3,45.60,True,"Got it - I'll use 11 Aug 2026 to 15 Aug 2026, a budget of GBP 11. Where would you like to go?"
+destination_discovery,1,39.19,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+destination_discovery,2,40.07,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+destination_discovery,3,36.75,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+cart_selection_flow,1,783.43,True,When do you want to depart?
+cart_selection_flow,2,718.84,True,When do you want to depart?
+cart_selection_flow,3,740.68,True,When do you want to depart?
+invalid_request,1,693.54,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+invalid_request,2,715.77,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+invalid_request,3,761.89,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+booking_lookup_or_profile_route,1,29.71,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+booking_lookup_or_profile_route,2,29.74,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+booking_lookup_or_profile_route,3,29.95,True,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."

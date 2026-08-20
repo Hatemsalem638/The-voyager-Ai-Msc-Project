@@ -1,0 +1,11 @@
+case_id,passed,expected,result_type,reason,final_reply
+duffel_unavailable,True,fallback_or_flights,flights,Expected flight fallback results or a safe flight response.,"I could not use Duffel, so I found mock fallback flight options from EMA to LHR."
+liteapi_unavailable,True,fallback_or_hotels,hotels,Expected hotel fallback results or a safe hotel response.,I found 3 mock fallback hotel option(s).
+invalid_city,True,safe_no_crash,flight_search,Expected any safe non-crashing response.,"I can use your detected nearest airport, East Midlands Airport (EMA), as the origin. Please provide your departure date and return date."
+invalid_past_date,True,safe_no_crash,general_enquiry,Expected any safe non-crashing response.,"Hello, I'm The Voyager. I can help you search flights and hotels, compare options, check availability, prepare bookings for confirmation, and guide you through Voyage AI's cart and checkout."
+missing_destination,True,asks_destination,hotel_search,Expected the assistant to ask for a missing destination.,"Please provide a city, check-in date, and check-out date for your hotel search."
+missing_date,True,asks_date,flight_search,Expected the assistant to ask for missing date details.,I can use East Midlands Airport (EMA) as your origin and London (LHR) as your destination. Please provide your departure date and return date.
+impossible_budget,True,safe_no_successful_booking,flight_search,Expected no booking reference for impossible budget.,I can use East Midlands Airport (EMA) as your origin and London (LHR) as your destination. Please provide your departure date and return date.
+invalid_option_number,True,invalid_option_message,general_enquiry,Expected a valid-option clarification.,"Which option do you mean - a flight, hotel, or package option?"
+empty_cart_checkout,True,no_booking_without_cart,booking_confirmation,Expected no booking reference from empty cart checkout.,Please add a package to your cart first.
+repeated_add_to_cart,True,no_crash_no_duplicate_or_message,flight_search,Expected no crash and a safe duplicate/add-to-cart response.,When do you want to depart?
