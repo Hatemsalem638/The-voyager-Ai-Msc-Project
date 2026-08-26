@@ -64,7 +64,7 @@ export type NormalisedFlightResult = {
 };
 
 export type FlightSearchResponse = {
-  provider_used: "duffel" | "mock_fallback";
+  provider_used: "duffel" | "mock_fallback" | "unavailable";
   flights: NormalisedFlightResult[];
   fallback_reason: string | null;
 };

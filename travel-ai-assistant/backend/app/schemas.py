@@ -244,7 +244,7 @@ class NormalisedFlightResult(BaseModel):
 
 
 class FlightSearchResponse(BaseModel):
-    provider_used: Literal["duffel", "mock_fallback"]
+    provider_used: Literal["duffel", "mock_fallback", "unavailable"]
     flights: list[NormalisedFlightResult] = Field(default_factory=list)
     fallback_reason: str | None = None
 
@@ -267,7 +267,7 @@ class HotelPreferences(BaseModel):
 
 
 class HotelSearchRequest(BaseModel):
-    """Validated hotel search contract shared by LiteAPI and mock providers."""
+    """Validated hotel search contract shared by hotel providers."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -318,7 +318,7 @@ class NormalisedHotelResult(BaseModel):
 
 
 class HotelSearchResponse(BaseModel):
-    provider_used: Literal["liteapi", "mock_hotel_fallback"]
+    provider_used: Literal["liteapi", "mock_hotel_fallback", "unavailable"]
     results: list[NormalisedHotelResult] = Field(default_factory=list)
     message: str | None = None
 

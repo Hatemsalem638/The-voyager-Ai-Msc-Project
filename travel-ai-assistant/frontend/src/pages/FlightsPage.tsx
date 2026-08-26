@@ -308,9 +308,12 @@ export function FlightsPage() {
           <div className="results-heading">
             <h2>Flight options</h2>
             <span className="provider-badge">
-              {response.provider_used === "duffel" ? "Duffel" : "Mock fallback"}
+              {response.provider_used === "duffel" ? "Duffel" : "Unavailable"}
             </span>
           </div>
+          {response.flights.length === 0 && (
+            <p className="provider-note">No provider-backed flight options are available for this search.</p>
+          )}
           <div className="result-controls">
             <label>
               <span>Sort</span>

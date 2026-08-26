@@ -90,7 +90,7 @@ class FollowUpContextTests(unittest.TestCase):
     @staticmethod
     def _mock_flight_search(request: FlightSearchRequest) -> FlightSearchResponse:
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=search_mock_flight_results(request),
             fallback_reason="Provider unavailable.",
         )
@@ -98,7 +98,7 @@ class FollowUpContextTests(unittest.TestCase):
     @staticmethod
     def _mock_hotel_search(request: HotelSearchRequest) -> HotelSearchResponse:
         return HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
+            provider_used="liteapi",
             results=search_mock_hotels(request),
             message="Provider unavailable.",
         )

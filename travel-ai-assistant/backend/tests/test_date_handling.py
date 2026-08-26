@@ -100,7 +100,7 @@ class DateHandlingTests(unittest.TestCase):
     def test_no_past_flight_dates_from_chat(self) -> None:
         def mock_search(request: FlightSearchRequest) -> FlightSearchResponse:
             return FlightSearchResponse(
-                provider_used="mock_fallback",
+                provider_used="duffel",
                 flights=search_mock_flight_results(request),
                 fallback_reason="Provider unavailable.",
             )
@@ -187,7 +187,7 @@ class DateHandlingTests(unittest.TestCase):
 
         def mock_search(request: HotelSearchRequest) -> HotelSearchResponse:
             return HotelSearchResponse(
-                provider_used="mock_hotel_fallback",
+                provider_used="liteapi",
                 results=search_mock_hotels(request),
                 message="Provider unavailable.",
             )

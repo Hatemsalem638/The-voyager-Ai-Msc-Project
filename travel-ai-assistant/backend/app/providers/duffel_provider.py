@@ -321,7 +321,7 @@ def search_duffel_flights(
 ) -> list[NormalisedFlightResult]:
     api_key = os.getenv("DUFFEL_API_KEY", "").strip()
     if not api_key:
-        raise DuffelProviderError("Missing DUFFEL_API_KEY; using mock fallback.")
+        raise DuffelProviderError("Missing DUFFEL_API_KEY; Duffel provider is unavailable.")
 
     if not api_key.startswith("duffel_test_"):
         raise DuffelProviderError("Duffel credentials are not valid for this environment.")

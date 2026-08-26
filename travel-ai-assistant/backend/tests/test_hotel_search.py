@@ -98,10 +98,14 @@ class HotelSearchTests(unittest.TestCase):
         self.engine.dispose()
 
     def _mock_provider_response(self) -> HotelSearchResponse:
+        results = [
+            result.model_copy(update={"provider": "liteapi"})
+            for result in search_mock_hotels(self.request)
+        ]
         return HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
-            results=search_mock_hotels(self.request),
-            message="LiteAPI disabled for test.",
+            provider_used="liteapi",
+            results=results,
+            message="LiteAPI test response.",
         )
 
     def _search_and_store(self) -> None:
@@ -145,13 +149,13 @@ class HotelSearchTests(unittest.TestCase):
                 refundable=True,
                 price=100 + index,
                 currency="GBP",
-                provider="mock_hotel_fallback",
+                provider="liteapi",
                 short_id=f"Hotel {index}",
             )
             for index in range(1, 6)
         ]
         response = HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
+            provider_used="liteapi",
             results=hotels,
         )
         _store_latest_hotel_results(
@@ -163,21 +167,26 @@ class HotelSearchTests(unittest.TestCase):
         )
 
     def _hotel_provider_for_request(self, request: HotelSearchRequest) -> HotelSearchResponse:
+        results = [
+            result.model_copy(update={"provider": "liteapi"})
+            for result in search_mock_hotels(request)
+        ]
         return HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
-            results=search_mock_hotels(request),
-            message="Mock hotel fallback.",
+            provider_used="liteapi",
+            results=results,
+            message="LiteAPI test response.",
         )
 
     @patch("app.main.liteapi_hotels_enabled", return_value=False)
-    def test_hotel_search_uses_mock_fallback_when_liteapi_is_disabled(
+    def test_hotel_search_returns_unavailable_when_liteapi_is_disabled(
         self,
         _mock_enabled: Mock,
     ) -> None:
         response = _search_hotels_with_fallback(self.request)
 
-        self.assertEqual(response.provider_used, "mock_hotel_fallback")
-        self.assertGreater(len(response.results), 0)
+        self.assertEqual(response.provider_used, "unavailable")
+        self.assertEqual(response.results, [])
+        self.assertIn("provider-backed hotel results", response.message or "")
 
     def test_mock_hotel_results_are_normalised_and_priced(self) -> None:
         results = search_mock_hotels(self.request)

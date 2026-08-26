@@ -374,7 +374,7 @@ export function HomePage() {
                   <p className="route-badge">{deal.originAirportCode} to {deal.destinationAirportCode}</p>
                   <p>{formatDate(deal.departureDate)} to {formatDate(deal.returnDate)}</p>
                   <strong>{formatMoney(deal.price, deal.currency)}</strong>
-                  <small>{deal.airline ?? "Airline varies"} - {deal.stops ?? "Stops vary"} - {deal.source === "provider_api" ? "Provider data" : "Provider fallback"}</small>
+                  <small>{deal.airline ?? "Airline varies"} - {deal.stops ?? "Stops vary"} - Provider data</small>
                 </Link>
               ))}
             </div>
@@ -437,7 +437,7 @@ export function HomePage() {
                   <div className="home-card-tags">
                     {destination.tags.map((tag) => <span key={tag}>{tag}</span>)}
                   </div>
-                  <small>{destination.source === "provider_api" ? "Provider data" : "Provider fallback"}</small>
+                  <small>Destination guide</small>
                 </Link>
               ))}
             </div>

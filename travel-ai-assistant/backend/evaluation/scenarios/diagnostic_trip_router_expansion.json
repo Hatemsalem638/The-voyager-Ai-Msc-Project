@@ -986,7 +986,7 @@
               "duration": "9h 15m",
               "price": 360.0,
               "currency": "GBP",
-              "provider": "evaluation_flight_provider"
+              "provider": "duffel"
             },
             "hotel": {
               "hotelId": "hotel-mco-1",
@@ -1001,7 +1001,7 @@
               "roomName": "Standard room",
               "price": 353.3,
               "currency": "GBP",
-              "provider": "evaluation_hotel_provider"
+              "provider": "liteapi"
             },
             "reasons": [
               "Includes return flight and hotel stay"
@@ -1028,7 +1028,7 @@
               "returnDate": "2026-11-19",
               "price": 362.09,
               "currency": "GBP",
-              "provider": "evaluation_flight_provider"
+              "provider": "duffel"
             },
             "hotel": {
               "hotelId": "hotel-mco-4",
@@ -1039,7 +1039,7 @@
               "nights": 4,
               "price": 353.3,
               "currency": "GBP",
-              "provider": "evaluation_hotel_provider"
+              "provider": "liteapi"
             },
             "reasons": [
               "Includes return flight and hotel stay"
@@ -1219,7 +1219,7 @@
             "duration": "9h 15m",
             "price": 360.0,
             "currency": "GBP",
-            "provider": "evaluation_flight_provider"
+            "provider": "duffel"
           },
           "hotel": {
             "hotelId": "hotel-mco-1",
@@ -1234,7 +1234,7 @@
             "roomName": "Standard room",
             "price": 353.3,
             "currency": "GBP",
-            "provider": "evaluation_hotel_provider"
+            "provider": "liteapi"
           },
           "reasons": [
             "Includes return flight and hotel stay"
@@ -1267,7 +1267,7 @@
               "duration": "9h 15m",
               "price": 360.0,
               "currency": "GBP",
-              "provider": "evaluation_flight_provider"
+              "provider": "duffel"
             },
             "hotel": {
               "hotelId": "hotel-mco-1",
@@ -1282,7 +1282,7 @@
               "roomName": "Standard room",
               "price": 353.3,
               "currency": "GBP",
-              "provider": "evaluation_hotel_provider"
+              "provider": "liteapi"
             },
             "reasons": [
               "Includes return flight and hotel stay"
@@ -2347,3 +2347,4 @@
     ]
   }
 ]
+

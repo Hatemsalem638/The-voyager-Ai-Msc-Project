@@ -104,7 +104,7 @@ class ActiveTripStateTests(unittest.TestCase):
     @staticmethod
     def _mock_flight_search(request: FlightSearchRequest) -> FlightSearchResponse:
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[
                 NormalisedFlightResult(
                     id=f"offer_{request.itinerary.origin.code}_{request.itinerary.destination.code}",
@@ -127,7 +127,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     passenger_count=request.passenger_count,
                     price="144",
                     currency="GBP",
-                    provider="mock_fallback",
+                    provider="duffel",
                 )
             ],
             fallback_reason="Test provider.",
@@ -136,7 +136,7 @@ class ActiveTripStateTests(unittest.TestCase):
     @staticmethod
     def _mock_hotel_search(request: HotelSearchRequest) -> HotelSearchResponse:
         return HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
+            provider_used="liteapi",
             results=[
                 NormalisedHotelResult(
                     id=f"hotel_{request.destination.city}",
@@ -153,7 +153,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     refundable=True,
                     price=300,
                     currency="GBP",
-                    provider="mock_hotel_fallback",
+                    provider="liteapi",
                     short_id="Hotel mock",
                 )
             ],
@@ -178,7 +178,7 @@ class ActiveTripStateTests(unittest.TestCase):
     def _seed_flight_results(self, prices: list[str]) -> None:
         request = self._flight_request()
         response = FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[
                 NormalisedFlightResult(
                     id=f"flight_{index}",
@@ -197,7 +197,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     passenger_count=1,
                     price=price,
                     currency="GBP",
-                    provider="mock_fallback",
+                    provider="duffel",
                 )
                 for index, price in enumerate(prices, start=1)
             ],
@@ -225,7 +225,7 @@ class ActiveTripStateTests(unittest.TestCase):
     @staticmethod
     def _empty_flight_search(request: FlightSearchRequest) -> FlightSearchResponse:
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[],
             fallback_reason="No test results.",
         )
@@ -1931,7 +1931,7 @@ class ActiveTripStateTests(unittest.TestCase):
             }
         )
         response = HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
+            provider_used="liteapi",
             results=[
                 NormalisedHotelResult(
                     id=f"hotel_{index}",
@@ -1948,7 +1948,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     refundable=True,
                     price=price,
                     currency="GBP",
-                    provider="mock_hotel_fallback",
+                    provider="liteapi",
                     short_id=f"Hotel {index}",
                 )
                 for index, price in enumerate(prices, start=1)
@@ -2002,7 +2002,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     "duration": "1h 45m",
                     "price": 200,
                     "currency": "GBP",
-                    "provider": "mock_fallback",
+                    "provider": "duffel",
                 },
                 "hotel": {
                     "hotelId": "hotel-package-1",
@@ -2017,7 +2017,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     "roomName": "Standard room",
                     "price": 300,
                     "currency": "GBP",
-                    "provider": "mock_hotel_fallback",
+                    "provider": "liteapi",
                 },
                 "reasons": [],
                 "warnings": [],
@@ -2047,7 +2047,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     "duration": "1h 45m",
                     "price": 180,
                     "currency": "GBP",
-                    "provider": "mock_fallback",
+                    "provider": "duffel",
                 },
                 "hotel": {
                     "hotelId": "hotel-package-2",
@@ -2062,7 +2062,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     "roomName": "Standard room",
                     "price": 240,
                     "currency": "GBP",
-                    "provider": "mock_hotel_fallback",
+                    "provider": "liteapi",
                 },
                 "reasons": [],
                 "warnings": [],
@@ -2085,7 +2085,7 @@ class ActiveTripStateTests(unittest.TestCase):
             "BEY": "260",
         }
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[
                 NormalisedFlightResult(
                     id=f"offer_{request.itinerary.origin.code}_{destination}",
@@ -2108,7 +2108,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     passenger_count=request.passenger_count,
                     price=prices.get(destination, "999"),
                     currency="GBP",
-                    provider="mock_fallback",
+                    provider="duffel",
                 )
             ],
             fallback_reason="Test provider.",
@@ -2136,7 +2136,7 @@ class ActiveTripStateTests(unittest.TestCase):
             prices[departure] = str(220 - day if day <= 9 else 250 + day)
         destination = request.itinerary.destination.code.upper()
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[
                 NormalisedFlightResult(
                     id=f"offer_{destination}_{departure}",
@@ -2161,7 +2161,7 @@ class ActiveTripStateTests(unittest.TestCase):
                     passenger_count=request.passenger_count,
                     price=prices.get(departure, "999"),
                     currency="GBP",
-                    provider="mock_fallback",
+                    provider="duffel",
                 )
             ],
             fallback_reason="Test provider.",
@@ -3335,7 +3335,7 @@ class ActiveTripStateTests(unittest.TestCase):
             self.db,
             self.session.id,
             _wrong_stale_route(),
-            FlightSearchResponse(provider_used="mock_fallback", flights=[]),
+            FlightSearchResponse(provider_used="duffel", flights=[]),
         )
         self.db.commit()
 
@@ -3635,7 +3635,7 @@ class ActiveTripStateTests(unittest.TestCase):
             self.db,
             self.session.id,
             _wrong_stale_route(),
-            FlightSearchResponse(provider_used="mock_fallback", flights=[]),
+            FlightSearchResponse(provider_used="duffel", flights=[]),
         )
         save_last_tool(self.db, self.session.id, "search_flights")
         self.db.commit()
@@ -3758,7 +3758,7 @@ class ActiveTripStateTests(unittest.TestCase):
             self.session.id,
             _wrong_stale_route(),
             FlightSearchResponse(
-                provider_used="mock_fallback",
+                provider_used="duffel",
                 flights=[
                     NormalisedFlightResult(
                         id="old_lhr_jfk",
@@ -3777,7 +3777,7 @@ class ActiveTripStateTests(unittest.TestCase):
                         passenger_count=1,
                         price="50",
                         currency="GBP",
-                        provider="mock_fallback",
+                        provider="duffel",
                     )
                 ],
                 fallback_reason="Old stale route.",

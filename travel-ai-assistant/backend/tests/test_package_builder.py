@@ -128,7 +128,7 @@ class PackageBuilderTests(unittest.TestCase):
                         "passenger_count": 1,
                         "price": "91",
                         "currency": "GBP",
-                        "provider": "mock_fallback",
+                        "provider": "duffel",
                     },
                 }
             ],
@@ -146,7 +146,7 @@ class PackageBuilderTests(unittest.TestCase):
     @staticmethod
     def _mock_package_flights(request: FlightSearchRequest) -> FlightSearchResponse:
         return FlightSearchResponse(
-            provider_used="mock_fallback",
+            provider_used="duffel",
             flights=[
                 NormalisedFlightResult(
                     id="flight-package-1",
@@ -173,7 +173,7 @@ class PackageBuilderTests(unittest.TestCase):
                     passenger_count=request.passenger_count,
                     price="91",
                     currency="GBP",
-                    provider="mock_fallback",
+                    provider="duffel",
                 )
             ],
         )
@@ -181,7 +181,7 @@ class PackageBuilderTests(unittest.TestCase):
     @staticmethod
     def _mock_package_hotels(request: HotelSearchRequest) -> HotelSearchResponse:
         return HotelSearchResponse(
-            provider_used="mock_hotel_fallback",
+            provider_used="liteapi",
             results=[
                 NormalisedHotelResult(
                     id="hotel-package-1",
@@ -199,7 +199,7 @@ class PackageBuilderTests(unittest.TestCase):
                     refundable=True,
                     price=300,
                     currency="GBP",
-                    provider="mock_hotel_fallback",
+                    provider="liteapi",
                     short_id="Hotel package",
                 )
             ],

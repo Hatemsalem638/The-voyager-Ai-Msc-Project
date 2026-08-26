@@ -1,6 +1,6 @@
 # Voyager AI Response Evaluation Report (Mocked Live-Shaped)
 
-Generated: 2026-08-14T19:38:51
+Generated: 2026-08-25T17:10:15
 
 ## Metadata
 
@@ -12,30 +12,30 @@ Generated: 2026-08-14T19:38:51
 | ollama_model_digest | - |
 | prompt_version | travel_tool_router_2026_08_phase3d_visible_results |
 | schema_version | travel_planner_tool_call_schema_v1_phase3d |
-| timestamp | 2026-08-14T19:38:51 |
+| timestamp | 2026-08-25T17:10:15 |
 
 ## Metrics
 
 | Metric | Value |
 | --- | ---: |
-| Total scenarios | 25 |
-| Total turns | 42 |
-| Passed turns | 42 |
-| Failed turns | 0 |
+| Total scenarios | 35 |
+| Total turns | 54 |
+| Passed turns | 53 |
+| Failed turns | 1 |
 | JSON parse rate | 100.00% |
 | Schema validity | 100.00% |
 | Tool accuracy | 100.00% |
 | Slot/state accuracy | 100.00% |
 | Joint state accuracy | 100.00% |
-| Prepare-trip usage rate | 61.90% |
-| Prepare-trip planner accuracy | 92.86% |
-| Requested-product accuracy | 78.57% |
-| Execution decision accuracy | 100.00% |
+| Prepare-trip usage rate | 61.11% |
+| Prepare-trip planner accuracy | 94.29% |
+| Requested-product accuracy | 80.00% |
+| Execution decision accuracy | 98.15% |
 | Provider execution gate accuracy | 100.00% |
 | Pending-action accuracy | 100.00% |
-| Repeat stability score | 100.00% |
+| Repeat stability score | 97.14% |
 | Stale override count | 0 |
-| Pending-action passed | 70 |
+| Pending-action passed | 85 |
 | Pending-action failed | 0 |
 | Illegal provider calls | 0 |
 
@@ -46,36 +46,38 @@ Generated: 2026-08-14T19:38:51
 ## Failure Categories
 
 ```json
-{}
+{
+  "RESPONSE_STATE_MISMATCH": 1
+}
 ```
 
 ## Tool Confusion Matrix
 
 | Expected tool | confirm_booking | general_help | handle_visible_results | prepare_trip_request | search_hotels |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| prepare_trip_request | 0 | 0 | 0 | 26 | 0 |
+| prepare_trip_request | 0 | 0 | 0 | 33 | 0 |
 | confirm_booking | 4 | 0 | 0 | 0 | 0 |
-| handle_visible_results | 0 | 0 | 4 | 0 | 0 |
-| general_help | 0 | 6 | 0 | 0 | 0 |
+| handle_visible_results | 0 | 0 | 7 | 0 | 0 |
+| general_help | 0 | 8 | 0 | 0 | 0 |
 | prepare_trip_request|search_hotels | 0 | 0 | 0 | 0 | 2 |
 
 ## Wrong-Tool Pattern Analysis
 
 | Pattern | Count |
 | --- | ---: |
-| - | 0 |
+| other routing/state mismatch | 1 |
 
 ## Failed Turn Diagnostics
 
 | Scenario | Turn | Repeat | User message | Expected tool | Actual tool | Expected important slots | Actual slots | Category | Diagnostics | Likely cause |
 | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- |
-| - | - | - | - | - | - | - | - | - | - | - |
+| flexible_unrelated_non_travel_no_provider_calls | 1 | 1 | Can you write my dissertation introduction for me? | ['general_help'] | general_help | {} | {"intent": null, "origin": "EMA", "destinationRegion": null, "selectedDestination": "MEH", "month": null, "departureDate": null, "returnDate": null, "nights": null, "pendingAction": null, "latestVisibleResultType": "flight_clarification"} | RESPONSE_STATE_MISMATCH | REQUIRED_RESPONSE_TEXT_MISSING | Response formatting issue: text did not match the validated state. |
 
 ## Failure Recommendations
 
 | Category | Count | Recommendation |
 | --- | ---: | --- |
-| - | 0 | No failures. |
+| RESPONSE_STATE_MISMATCH | 1 | Response formatting issue: text did not match the validated state. |
 
 ## Scenario Repeats
 
@@ -104,6 +106,16 @@ Generated: 2026-08-14T19:38:51
 | clarification_loop_guard_non_answer | 2 | 0 | 100.00% | - | - |
 | clarification_rejects_past_date | 2 | 0 | 100.00% | - | - |
 | clarification_rejects_malformed_date | 2 | 0 | 100.00% | - | - |
+| flexible_clear_flight_birmingham_paris_dates | 1 | 0 | 100.00% | - | - |
+| flexible_clear_hotel_london_dates | 1 | 0 | 100.00% | - | - |
+| flexible_broad_skiing_trip_asks_for_date | 1 | 0 | 100.00% | - | - |
+| flexible_package_region_missing_details | 1 | 0 | 100.00% | - | - |
+| flexible_destination_clarification_day_answer | 2 | 0 | 100.00% | - | - |
+| flexible_visible_package_cheapest_and_second_cart | 2 | 0 | 100.00% | - | - |
+| flexible_book_it_uses_current_package_selection | 1 | 0 | 100.00% | - | - |
+| flexible_explicit_destination_correction_with_dates | 1 | 0 | 100.00% | - | - |
+| flexible_invalid_candidate_rejected | 1 | 0 | 100.00% | - | - |
+| flexible_unrelated_non_travel_no_provider_calls | 0 | 1 | 0.00% | - | - |
 | florida_birmingham_november_fresh | 3 | 0 | 100.00% | - | - |
 | florida_birmingham_november_polluted | 3 | 0 | 100.00% | - | - |
 
@@ -133,20 +145,32 @@ Generated: 2026-08-14T19:38:51
 | broad_skiing_this_month_then_confirmation | 2 | - | PASS | I'll use Birmingham Airport (BHX) as your origin and search for skiing destination ideas for 3 nights, departing 19 Aug 2026 and returning 22 Aug 2026. I found  |
 | broad_skiing_this_month_then_confirmation | 3 | - | PASS | Please choose one of the destination options first, then I can search flights or build a package. |
 | hotel_london_budget_date_followup | 1 | - | PASS | Sure - I can search hotels in London. When do you want to check in, and how many nights will you stay? |
-| hotel_london_budget_date_followup | 2 | - | PASS | I searched hotels in London around London. I found 3 hotel option(s). |
+| hotel_london_budget_date_followup | 2 | - | PASS | I searched hotels in London around London. I found 3 hotel option(s) using LiteAPI rates. |
 | flight_to_london_default_origin_invariant | 1 | - | PASS | I have your destination as London Heathrow Airport (LHR) from East Midlands Airport (EMA). Please provide your exact departure and return dates. |
 | clarification_destination_this_month_resume | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
 | clarification_destination_this_month_resume | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin and search for skiing destination ideas for 3 nights, departing 19 Aug 2026 and returning 22 Aug 2026. I fou |
 | clarification_destination_day_only_resume | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
 | clarification_destination_day_only_resume | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin and search for skiing destination ideas for 3 nights, departing 15 Aug 2026 and returning 18 Aug 2026. I fou |
 | clarification_hotel_date_resume | 1 | - | PASS | Sure - I can search hotels in London. When do you want to check in, and how many nights will you stay? |
-| clarification_hotel_date_resume | 2 | - | PASS | I searched hotels in London around London. I found 3 hotel option(s). |
+| clarification_hotel_date_resume | 2 | - | PASS | I searched hotels in London around London. I found 3 hotel option(s) using LiteAPI rates. |
 | clarification_loop_guard_non_answer | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
-| clarification_loop_guard_non_answer | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 15 Aug 2026, 21 Aug 2026, 28  |
+| clarification_loop_guard_non_answer | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 26 Aug 2026, 01 Sep 2026, 08  |
 | clarification_rejects_past_date | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
-| clarification_rejects_past_date | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 15 Aug 2026, 21 Aug 2026, 28  |
+| clarification_rejects_past_date | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 26 Aug 2026, 01 Sep 2026, 08  |
 | clarification_rejects_malformed_date | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
-| clarification_rejects_malformed_date | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 15 Aug 2026, 21 Aug 2026, 28  |
+| clarification_rejects_malformed_date | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin. When do you want to depart? To keep this moving, you can choose one of these: 26 Aug 2026, 01 Sep 2026, 08  |
+| flexible_clear_flight_birmingham_paris_dates | 1 | - | PASS | I found real economy flight options from BHX to CDG for 1 passenger using Duffel. |
+| flexible_clear_hotel_london_dates | 1 | - | PASS | I found 3 hotel option(s) using LiteAPI rates. |
+| flexible_broad_skiing_trip_asks_for_date | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
+| flexible_package_region_missing_details | 1 | - | PASS | I can help build a Florida package from Birmingham Airport (BHX). Florida has several main airport choices, including Orlando, Miami, Tampa and Fort Lauderdale. |
+| flexible_destination_clarification_day_answer | 1 | - | PASS | I can help you find skiing destinations for a 3-night trip. When do you want to depart? I'll use East Midlands Airport (EMA) as your departure airport. |
+| flexible_destination_clarification_day_answer | 2 | - | PASS | I'll use East Midlands Airport (EMA) as your origin and search for skiing destination ideas for 3 nights, departing 19 Aug 2026 and returning 22 Aug 2026. I fou |
+| flexible_visible_package_cheapest_and_second_cart | 1 | - | PASS | Here are the cheapest package options I currently have. |
+| flexible_visible_package_cheapest_and_second_cart | 2 | - | PASS | I added package option 2 to your cart. The total is GBP 390.00. You can now proceed to checkout. |
+| flexible_book_it_uses_current_package_selection | 1 | - | PASS | I added package option 1 to your cart. The total is GBP 420.00. You can now proceed to checkout. |
+| flexible_explicit_destination_correction_with_dates | 1 | - | PASS | I have your destination as Miami International Airport (MIA) from Birmingham Airport (BHX), travelling from 15 Nov 2026 to 19 Nov 2026. Would you like me to bui |
+| flexible_invalid_candidate_rejected | 1 | - | PASS | I can help build a Atlantis package from Birmingham Airport (BHX). November is a broad date range, and I need a city or airport in Atlantis before searching. Pl |
+| flexible_unrelated_non_travel_no_provider_calls | 1 | RESPONSE_STATE_MISMATCH | FAIL | I can use East Midlands Airport (EMA) as your origin and Mehamn (MEH) as your destination. Please provide your departure date and return date. |
 | florida_birmingham_november_fresh | 1 | - | PASS | I can help build a Florida package from Birmingham Airport (BHX). Florida has several main airport choices, including Orlando, Miami, Tampa and Fort Lauderdale. |
 | florida_birmingham_november_fresh | 2 | - | PASS | I have your destination as Orlando International Airport (MCO) from Birmingham Airport (BHX), travelling from 15 Nov 2026 to 19 Nov 2026. Would you like me to b |
 | florida_birmingham_november_fresh | 3 | - | PASS | I built package options for your 4-night Orlando trip from Birmingham Airport (BHX), departing 15 Nov 2026 and returning 19 Nov 2026. The cheapest package is GB |

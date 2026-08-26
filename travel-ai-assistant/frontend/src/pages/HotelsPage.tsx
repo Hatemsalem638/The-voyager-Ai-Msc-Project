@@ -302,9 +302,12 @@ export function HotelsPage() {
           <div className="results-heading">
             <h2>Hotel options</h2>
             <span className="provider-badge">
-              {response.provider_used === "liteapi" ? "LiteAPI" : "Mock fallback"}
+              {response.provider_used === "liteapi" ? "LiteAPI" : "Unavailable"}
             </span>
           </div>
+          {response.results.length === 0 && (
+            <p className="provider-note">No provider-backed hotel options are available for this search.</p>
+          )}
           <div className="hotel-results-layout">
             <aside className="map-placeholder">
               <strong>Map preview</strong>

@@ -28,7 +28,7 @@ export type HotelSearchPayload = {
 };
 
 export type HotelSearchResponse = {
-  provider_used: "liteapi" | "mock_hotel_fallback";
+  provider_used: "liteapi" | "mock_hotel_fallback" | "unavailable";
   results: NormalisedHotelResult[];
   message: string | null;
 };

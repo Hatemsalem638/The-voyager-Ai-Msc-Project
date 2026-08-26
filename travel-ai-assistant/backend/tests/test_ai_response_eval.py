@@ -31,6 +31,8 @@ class AIResponseEvaluationTests(unittest.TestCase):
 
         self.assertIn("florida_birmingham_november_fresh", scenario_ids)
         self.assertIn("florida_birmingham_november_polluted", scenario_ids)
+        self.assertIn("flexible_clear_flight_birmingham_paris_dates", scenario_ids)
+        self.assertIn("flexible_visible_package_cheapest_and_second_cart", scenario_ids)
         self.assertTrue(all(scenario.get("turns") for scenario in scenarios))
 
     def test_expected_state_checks_nested_paths(self) -> None:

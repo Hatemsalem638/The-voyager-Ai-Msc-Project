@@ -71,7 +71,6 @@ from app.memory_store import (
     load_user_preferences,
     update_user_preferences,
 )
-from app.mock_provider import search_mock_flight_results, search_mock_travel
 from app.models import Booking, ChatSession, Message, User
 from app.providers.duffel_provider import (
     DuffelProviderError,
@@ -84,7 +83,6 @@ from app.providers.liteapi_hotel_provider import (
     search_liteapi_location_suggestions,
     search_liteapi_hotels,
 )
-from app.providers.mock_hotel_provider import search_mock_hotels
 from app.services.clarification import (
     clear_last_clarification,
     disambiguating_clarification_text,
@@ -454,17 +452,21 @@ def _search_flights_with_fallback(request: FlightSearchRequest) -> FlightSearchR
                 fallback_reason=None,
             )
     else:
-        fallback_reason = "Missing DUFFEL_API_KEY; using mock fallback."
+        fallback_reason = (
+            "I could not find provider-backed flight results for this search. "
+            "Try a different destination, date or airport."
+        )
 
+    fallback_reason = _provider_unavailable_reply(product="flight")
     return FlightSearchResponse(
-        provider_used="mock_fallback",
-        flights=search_mock_flight_results(request),
+        provider_used="unavailable",
+        flights=[],
         fallback_reason=fallback_reason,
     )
 
 
 def _search_hotels_with_fallback(request: HotelSearchRequest) -> HotelSearchResponse:
-    """Use LiteAPI when configured, otherwise return stable mock hotel cards."""
+    """Use LiteAPI when configured; fail safely without public fallback inventory."""
 
     fallback_message: str | None = None
     if liteapi_hotels_enabled():
@@ -479,12 +481,54 @@ def _search_hotels_with_fallback(request: HotelSearchRequest) -> HotelSearchResp
                 message=None,
             )
     else:
-        fallback_message = "LiteAPI hotel search is disabled or credentials are missing."
+        fallback_message = (
+            "I could not find provider-backed hotel results for this search. "
+            "Try a different destination, date or location."
+        )
 
+    fallback_message = _provider_unavailable_reply(product="hotel")
     return HotelSearchResponse(
-        provider_used="mock_hotel_fallback",
-        results=search_mock_hotels(request),
+        provider_used="unavailable",
+        results=[],
         message=fallback_message,
+    )
+
+
+def _is_provider_backed_flight_result(flight: dict[str, Any] | None) -> bool:
+    return isinstance(flight, dict) and str(flight.get("provider") or "").lower() == "duffel"
+
+
+def _is_provider_backed_hotel_result(hotel: dict[str, Any] | None) -> bool:
+    return isinstance(hotel, dict) and str(hotel.get("provider") or "").lower() == "liteapi"
+
+
+def _is_provider_backed_package_option(package: dict[str, Any] | None) -> bool:
+    if not isinstance(package, dict):
+        return False
+    flight = package.get("flight") if isinstance(package.get("flight"), dict) else {}
+    hotel = package.get("hotel") if isinstance(package.get("hotel"), dict) else {}
+    return _is_provider_backed_flight_result(flight) and _is_provider_backed_hotel_result(hotel)
+
+
+def _provider_unavailable_reply(*, product: str = "results") -> str:
+    if product == "flight":
+        return (
+            "I could not find provider-backed flight results for this search. "
+            "Try a different destination, date or airport."
+        )
+    if product == "hotel":
+        return (
+            "I could not find provider-backed hotel results for this search. "
+            "Try a different destination, date or location."
+        )
+    if product == "package":
+        return (
+            "I could not find provider-backed flight and hotel results for this package. "
+            "Try a different destination, date or airport."
+        )
+    return (
+        "I could not find provider-backed results for this search. "
+        "Try a different destination, date or airport."
     )
 
 
@@ -585,7 +629,7 @@ def _homepage_flight_deal(
         }
     )
     response = _search_flights_with_fallback(request)
-    if not response.flights:
+    if response.provider_used != "duffel" or not response.flights:
         return None
     flight = response.flights[0]
     price = _float_price(flight.price)
@@ -645,6 +689,8 @@ def _homepage_package_deal(
         }
     )
     hotel_response = _search_hotels_with_fallback(hotel_request)
+    if hotel_response.provider_used != "liteapi":
+        return None
     matching_hotels = [
         hotel
         for hotel in hotel_response.results
@@ -655,11 +701,7 @@ def _homepage_package_deal(
     hotel = matching_hotels[0]
     hotel_price = round(float(hotel.price), 2)
     total = round(flight_deal.price + hotel_price, 2)
-    source = "provider_api" if (
-        flight_deal.source == "provider_api"
-        and hotel_response.provider_used == "liteapi"
-        and location.get("source") == "provider_api"
-    ) else "provider_cache"
+    source = "provider_api"
     return HomepagePackageDeal.model_validate(
         {
             "id": f"pkg-{origin['code']}-{airport['code']}-{departure.isoformat()}",
@@ -851,7 +893,7 @@ def search_flights(request: FlightSearchRequest) -> FlightSearchResponse:
 
 @app.post("/hotels/search", response_model=HotelSearchResponse)
 def search_hotels(request: HotelSearchRequest) -> HotelSearchResponse:
-    """Direct typed hotel search using LiteAPI first and mock fallback."""
+    """Direct typed hotel search using LiteAPI provider data only."""
 
     _validate_direct_hotel_dates(request)
     return _search_hotels_with_fallback(request)
@@ -4343,8 +4385,14 @@ def _build_package_options(
     hotel_response: HotelSearchResponse,
     active_trip_revision: int,
 ) -> list[dict[str, Any]]:
-    flights = _priced_flights(flight_response)[:3]
-    hotels = _priced_hotels(hotel_response)[:3]
+    if flight_response.provider_used != "duffel" or hotel_response.provider_used != "liteapi":
+        return []
+    flights = [
+        flight for flight in _priced_flights(flight_response) if _is_provider_backed_flight_result(flight)
+    ][:3]
+    hotels = [
+        hotel for hotel in _priced_hotels(hotel_response) if _is_provider_backed_hotel_result(hotel)
+    ][:3]
     packages: list[dict[str, Any]] = []
     nights = (package_request.return_date - package_request.departure_date).days
     option_number = 1
@@ -6823,7 +6871,11 @@ def _execute_broad_destination_candidate_search(
             int(active_trip.get("passengerCount") or 1),
         )
         provider_response = _search_flights_with_fallback(flight_request)
+        if provider_response.provider_used != "duffel":
+            continue
         for flight in _normalised_flight_dicts(provider_response):
+            if not _is_provider_backed_flight_result(flight):
+                continue
             all_flights.append(flight)
 
     if all_flights:
@@ -7012,7 +7064,13 @@ def _execute_search_alternative_origins_tool(
                 int(active_trip.get("passengerCount") or 1),
             )
             provider_response = _search_flights_with_fallback(flight_request)
-            flights.extend(_normalised_flight_dicts(provider_response))
+            if provider_response.provider_used != "duffel":
+                continue
+            flights.extend(
+                flight
+                for flight in _normalised_flight_dicts(provider_response)
+                if _is_provider_backed_flight_result(flight)
+            )
     if not flights:
         return _tool_response(
             db,
@@ -8651,19 +8709,23 @@ def _execute_active_trip_product_search(
         )
         provider_response = _search_flights_with_fallback(flight_request)
         LOGGER.info("Provider used: %s", provider_response.provider_used)
-        _store_latest_flight_results(
-            session.id,
-            _build_llama_flight_intent(request.message, flight_request),
-            provider_response,
-            flight_request,
-            db,
-        )
-        results["flights"] = _flight_search_results_for_chat(provider_response)["flights"]
-        reply_parts.append(
-            f"flights from {flight_request.itinerary.origin.code.upper()} "
-            f"to {flight_request.itinerary.destination.code.upper()}"
-        )
-        provider_parts.append(provider_response.provider_used)
+        if provider_response.provider_used != "duffel" or not provider_response.flights:
+            reply_parts.append(_provider_unavailable_reply(product="flight"))
+            provider_parts.append(provider_response.provider_used)
+        else:
+            _store_latest_flight_results(
+                session.id,
+                _build_llama_flight_intent(request.message, flight_request),
+                provider_response,
+                flight_request,
+                db,
+            )
+            results["flights"] = _flight_search_results_for_chat(provider_response)["flights"]
+            reply_parts.append(
+                f"flights from {flight_request.itinerary.origin.code.upper()} "
+                f"to {flight_request.itinerary.destination.code.upper()}"
+            )
+            provider_parts.append(provider_response.provider_used)
 
     if "hotels" in requested_products:
         hotel_request, error = build_hotel_request_from_active_trip(active_trip)
@@ -8671,19 +8733,23 @@ def _execute_active_trip_product_search(
             return _tool_response(db, session, request, intent, error or "Please choose hotel dates.")
         provider_response = _search_hotels_with_fallback(hotel_request)
         LOGGER.info("Provider used: %s", provider_response.provider_used)
-        hotel_intent = _build_hotel_intent(request.message, hotel_request)
-        _store_latest_hotel_results(
-            session.id,
-            hotel_intent,
-            provider_response,
-            hotel_request,
-            db,
-        )
-        hotels = _normalised_hotel_dicts(provider_response)
-        results["hotels"] = _hotel_results_for_chat(hotels, CHAT_HOTEL_CARD_LIMIT)["hotels"]
-        city = hotel_request.destination.city or hotel_request.destination.country
-        reply_parts.append(f"hotels in {city}")
-        provider_parts.append(provider_response.provider_used)
+        if provider_response.provider_used != "liteapi" or not provider_response.results:
+            reply_parts.append(_provider_unavailable_reply(product="hotel"))
+            provider_parts.append(provider_response.provider_used)
+        else:
+            hotel_intent = _build_hotel_intent(request.message, hotel_request)
+            _store_latest_hotel_results(
+                session.id,
+                hotel_intent,
+                provider_response,
+                hotel_request,
+                db,
+            )
+            hotels = _normalised_hotel_dicts(provider_response)
+            results["hotels"] = _hotel_results_for_chat(hotels, CHAT_HOTEL_CARD_LIMIT)["hotels"]
+            city = hotel_request.destination.city or hotel_request.destination.country
+            reply_parts.append(f"hotels in {city}")
+            provider_parts.append(provider_response.provider_used)
 
     if not reply_parts:
         return _tool_response(
@@ -8707,16 +8773,20 @@ def _execute_active_trip_product_search(
     )
     _save_message(db, session.id, "user", request.message, intent)
     connector = " and " if len(reply_parts) == 2 else ", "
-    reply = f"I searched {connector.join(reply_parts)}"
+    has_provider_results = bool(results.get("flights") or results.get("hotels"))
+    if not has_provider_results:
+        reply = " ".join(reply_parts)
+    else:
+        reply = f"I searched {connector.join(reply_parts)}"
     nights = active_trip.get("tripDurationNights")
-    if dates.get("departureDate") and dates.get("returnDate"):
+    if has_provider_results and dates.get("departureDate") and dates.get("returnDate"):
         reply += (
             f" from {dates['departureDate']} to {dates['returnDate']}"
             + (f" for {nights} nights" if nights else "")
         )
-    if provider_parts:
+    if provider_parts and has_provider_results:
         reply += "."
-    if destination.get("airportCode"):
+    if has_provider_results and destination.get("airportCode"):
         reply += f" The active trip destination is {destination.get('city')} ({destination.get('airportCode')})."
     _save_message(db, session.id, "assistant", reply)
     db.commit()
@@ -8852,6 +8922,24 @@ def _execute_package_request_if_possible(
 
     flight_response = _search_flights_with_fallback(flight_request)
     hotel_response = _search_hotels_with_fallback(hotel_request)
+    if flight_response.provider_used != "duffel" or not flight_response.flights:
+        return _tool_response(
+            db,
+            session,
+            request,
+            intent,
+            _provider_unavailable_reply(product="flight"),
+            _empty_travel_results(),
+        )
+    if hotel_response.provider_used != "liteapi" or not hotel_response.results:
+        return _tool_response(
+            db,
+            session,
+            request,
+            intent,
+            _provider_unavailable_reply(product="hotel"),
+            _empty_travel_results(),
+        )
     _store_latest_flight_results(
         session.id,
         _build_llama_flight_intent(request.message, flight_request),
@@ -9039,6 +9127,15 @@ def _execute_package_selection_if_possible(
             _build_control_intent(request.message, "package_option_selection"),
             "I can build a package first, but I need your exact travel dates and destination city or airport before I can add one to the cart.",
         )
+    if not _is_provider_backed_package_option(package):
+        return _tool_response(
+            db,
+            session,
+            request,
+            _build_control_intent(request.message, "package_option_selection"),
+            _provider_unavailable_reply(product="package"),
+            _empty_travel_results(),
+        )
 
     cart = _package_cart_summary(package, session.id)
     active_trip["selectedPackageOption"] = package
@@ -9169,6 +9266,15 @@ def _execute_selected_flight_cart_if_possible(
 
     if selected is not None:
         option_number, flight = selected
+        if not _is_provider_backed_flight_result(flight):
+            return _tool_response(
+                db,
+                session,
+                request,
+                _build_control_intent(request.message, "package_option_selection"),
+                _provider_unavailable_reply(product="flight"),
+                _empty_travel_results(),
+            )
         if _cart_contains_flight(cart, flight):
             if isinstance(db, Session):
                 active_trip["latestVisibleResultType"] = "cart"
@@ -9413,6 +9519,15 @@ def _execute_selected_hotel_cart_if_possible(
     if selected is not None:
         option_number, hotel = selected
         hotel_name = str(hotel.get("hotel_name") or "That hotel")
+        if not _is_provider_backed_hotel_result(hotel):
+            return _tool_response(
+                db,
+                session,
+                request,
+                _build_control_intent(request.message, "package_option_selection"),
+                _provider_unavailable_reply(product="hotel"),
+                _empty_travel_results(),
+            )
         if _cart_contains_hotel(cart, hotel):
             active_trip["latestVisibleResultType"] = "cart"
             active_trip["cartStatus"] = "active"
@@ -9470,6 +9585,24 @@ def _execute_selected_hotel_cart_if_possible(
         next_action="navigate",
         next_path="/cart",
     )
+
+
+def _checkout_item_is_provider_backed(item: Any) -> bool:
+    provider = str(getattr(item, "provider", "") or "").lower()
+    item_data = getattr(item, "item_data", None)
+    if not isinstance(item_data, dict):
+        item_data = {}
+
+    if item.type == "flight":
+        flight = item_data.get("flightOption") if isinstance(item_data.get("flightOption"), dict) else item_data
+        return provider == "duffel" or _is_provider_backed_flight_result(flight)
+    if item.type == "hotel":
+        hotel = item_data.get("hotelOption") if isinstance(item_data.get("hotelOption"), dict) else item_data
+        return provider == "liteapi" or _is_provider_backed_hotel_result(hotel)
+    if item.type == "package":
+        package = item_data.get("packageOption") if isinstance(item_data.get("packageOption"), dict) else item_data
+        return _is_provider_backed_package_option(package)
+    return False
 
 
 def _generate_package_booking_reference(db: Session) -> str:
@@ -9953,18 +10086,14 @@ def _execute_destination_set_flight_comparison_if_possible(
     save_active_trip(db, session.id, active_trip)
 
     if ranked_flights and search_requests:
-        provider_used = "duffel" if "duffel" in provider_names else "mock_fallback"
+        provider_used = "duffel" if "duffel" in provider_names else "unavailable"
         comparison_response = FlightSearchResponse(
             provider_used=provider_used,
             flights=[
                 NormalisedFlightResult.model_validate(flight)
                 for flight in ranked_flights
             ],
-            fallback_reason=(
-                "Some destination flight searches used fallback results."
-                if "mock_fallback" in provider_names
-                else None
-            ),
+            fallback_reason=None if provider_used == "duffel" else _provider_unavailable_reply(product="flight"),
         )
         _store_latest_flight_results(
             session.id,
@@ -10319,15 +10448,11 @@ def _search_active_trip_flight_for_departures(
 
     intent = _build_control_intent(request.message, "flight_search")
     if ranked_flights and search_requests:
-        provider_used = "duffel" if "duffel" in provider_names else "mock_fallback"
+        provider_used = "duffel" if "duffel" in provider_names else "unavailable"
         provider_response = FlightSearchResponse(
             provider_used=provider_used,
             flights=[NormalisedFlightResult.model_validate(flight) for flight in ranked_flights],
-            fallback_reason=(
-                "Some cheapest-day searches used fallback results."
-                if "mock_fallback" in provider_names
-                else None
-            ),
+            fallback_reason=None if provider_used == "duffel" else _provider_unavailable_reply(product="flight"),
         )
         _store_latest_flight_results(
             session.id,
@@ -10598,12 +10723,18 @@ def _build_llama_flight_reply(
         else f"{flight_search.passenger_count} passengers"
     )
 
+    if not provider_response.flights:
+        return _provider_unavailable_reply(product="flight")
+
     if provider_response.provider_used == "duffel":
         return (
             f"I found real {flight_search.preferences.cabin_class.replace('_', ' ')} "
             f"flight options from {origin} to {destination} for {passenger_label} "
             "using Duffel."
         )
+
+    if provider_response.provider_used == "unavailable":
+        return _provider_unavailable_reply(product="flight")
 
     if flight_search.preferences.cabin_class != "economy":
         return (
@@ -11052,7 +11183,7 @@ def _results_for_packages(
     }
 
 
-def _build_mock_reply(
+def _build_legacy_reply(
     intent: dict,
     results: dict,
     requires_confirmation: bool = False,
@@ -11120,7 +11251,7 @@ def _build_mock_reply(
                 f"Booking {booking_reference} is {booking['status']} "
                 f"for {booking['destination']}."
             )
-        return f"I could not find a mock booking for reference {booking_reference}."
+        return f"I could not find a booking for reference {booking_reference}."
 
     return (
         "Hello, I'm The Voyager. I can help you search flights and hotels, "
@@ -11229,7 +11360,7 @@ def _handle_confirmation_message(
         ]
 
     if selected_flight is None and selected_hotel is None:
-        assistant_message = _build_mock_reply(intent, travel_results)
+        assistant_message = _build_legacy_reply(intent, travel_results)
     _save_message(db, session.id, "assistant", assistant_message)
     db.commit()
 
@@ -11265,7 +11396,7 @@ def _handle_cancellation_message(
         save_active_trip(db, session.id, active_trip)
 
     travel_results = _empty_travel_results()
-    assistant_message = _build_mock_reply(intent, travel_results)
+    assistant_message = _build_legacy_reply(intent, travel_results)
     _save_message(db, session.id, "assistant", assistant_message)
     db.commit()
 
@@ -11768,7 +11899,7 @@ def _execute_hotel_search_request(
     )
     hotels = _normalised_hotel_dicts(provider_response)
     if not hotels:
-        reply = "I could not find hotel results for that request."
+        reply = _provider_unavailable_reply(product="hotel")
     elif provider_response.provider_used == "liteapi":
         reply = f"I found {len(hotels)} hotel option(s) using LiteAPI rates."
     else:
@@ -12036,12 +12167,16 @@ def _respond_to_intent(
             intent.get("booking_reference"),
             user_id=getattr(session, "user_id", None),
         )
+        assistant_message = _build_legacy_reply(
+            intent,
+            travel_results,
+            requires_confirmation=False,
+        )
     else:
-        travel_results = search_mock_travel(intent)
+        travel_results = _empty_travel_results()
+        assistant_message = _provider_unavailable_reply()
 
-    requires_confirmation = (
-        intent["intent_type"] == "package_search" and bool(travel_results["packages"])
-    )
+    requires_confirmation = False
     selected_option_number = None
     package_count = len(travel_results["packages"])
     if requires_confirmation and package_count == 1:
@@ -12061,11 +12196,6 @@ def _respond_to_intent(
             selected_option_number=selected_option_number,
         )
 
-    assistant_message = _build_mock_reply(
-        intent,
-        travel_results,
-        requires_confirmation=requires_confirmation,
-    )
     _save_message(db, session.id, "assistant", assistant_message)
     db.commit()
 
@@ -14191,7 +14321,7 @@ def _execute_booking_lookup_tool(
         session,
         request,
         intent,
-        _build_mock_reply(intent, results),
+        _build_legacy_reply(intent, results),
         results,
     )
 
@@ -15764,7 +15894,7 @@ def create_booking(
         user_id=user.id,
         session_id=session.id,
         destination=request.destination,
-        summary=request.summary or f"Manual mock booking for {request.destination}",
+        summary=request.summary or f"Manual booking for {request.destination}",
         flight_id=request.flight_id,
         hotel_id=request.hotel_id,
         estimated_price=request.estimated_price,
@@ -15827,6 +15957,15 @@ def confirm_checkout(
         )
 
     user, session = current_user, _get_or_create_user_session(db, current_user)
+
+    if any(not _checkout_item_is_provider_backed(item) for item in request.items):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Checkout requires provider-backed flight, hotel, or package records. "
+                "Please search again and select an available option."
+            ),
+        )
 
     totals = _checkout_totals(request.items)
     item_counts = {

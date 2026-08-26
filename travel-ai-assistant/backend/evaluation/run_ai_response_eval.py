@@ -179,11 +179,11 @@ class ProviderCallRecorder:
                 passenger_count=request.passenger_count,
                 price=f"{430 + index * 45:.2f}",
                 currency="GBP",
-                provider="evaluation_flight_provider",
+                provider="duffel",
             )
             for index in range(1, 4)
         ]
-        return FlightSearchResponse(provider_used="mock_fallback", flights=flights)
+        return FlightSearchResponse(provider_used="duffel", flights=flights)
 
     def record_hotel(self, request: HotelSearchRequest) -> HotelSearchResponse:
         city = request.destination.city or "Selected city"
@@ -214,14 +214,14 @@ class ProviderCallRecorder:
                 room_name="Standard room",
                 refundable=index == 1,
                 price=float(125 * nights + index * 35),
-                currency=request.preferences.currency or "GBP",
-                provider="evaluation_hotel_provider",
+                currency="GBP",
+                provider="liteapi",
                 short_id=f"EHTL{index}",
                 amenities=["wifi", "breakfast"],
             )
             for index in range(1, 4)
         ]
-        return HotelSearchResponse(provider_used="mock_hotel_fallback", results=hotels)
+        return HotelSearchResponse(provider_used="liteapi", results=hotels)
 
     def record_destination(
         self,

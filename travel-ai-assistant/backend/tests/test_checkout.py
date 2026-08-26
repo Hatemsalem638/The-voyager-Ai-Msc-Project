@@ -122,12 +122,14 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "flight",
                         "title": "Flight",
+                        "provider": "duffel",
                         "price": 400,
                         "currency": "GBP",
                     },
                     {
                         "type": "hotel",
                         "title": "Hotel",
+                        "provider": "liteapi",
                         "price": 300.5,
                         "currency": "GBP",
                     },
@@ -148,6 +150,7 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "flight",
                         "title": "Flight",
+                        "provider": "duffel",
                         "price": 100,
                         "currency": "GBP",
                         "item_data": {
@@ -162,6 +165,7 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "hotel",
                         "title": "Lyon Central Hotel",
+                        "provider": "liteapi",
                         "price": 300,
                         "currency": "GBP",
                         "item_data": {
@@ -217,7 +221,7 @@ class CheckoutTests(unittest.TestCase):
                                 "cabin": "economy",
                                 "price": 91,
                                 "currency": "GBP",
-                                "provider": "mock_fallback",
+                                "provider": "duffel",
                             },
                             "hotel": {
                                 "hotelId": "hotel-package-1",
@@ -230,7 +234,7 @@ class CheckoutTests(unittest.TestCase):
                                 "boardType": "Room only",
                                 "price": 300,
                                 "currency": "GBP",
-                                "provider": "mock_hotel_fallback",
+                                "provider": "liteapi",
                             },
                         },
                     }
@@ -247,6 +251,47 @@ class CheckoutTests(unittest.TestCase):
         self.assertEqual(response.flight_ticket["destination"], "LYS")
         self.assertEqual(response.hotel_voucher["hotelName"], "Lyon Central Hotel")
         self.assertEqual(response.package_summary["destination"], "Lyon")
+
+    def test_checkout_rejects_fallback_package_item(self) -> None:
+        payload = self._payload(
+            [
+                {
+                    "type": "package",
+                    "title": "Fallback package",
+                    "price": 391,
+                    "currency": "GBP",
+                    "item_data": {
+                        "packageId": "PKG-FALLBACK-1",
+                        "destinationCity": "Lyon",
+                        "destinationAirportCode": "LYS",
+                        "flight": {
+                            "origin": "EMA",
+                            "destination": "LYS",
+                            "departureDate": "2026-09-01",
+                            "returnDate": "2026-09-04",
+                            "price": 91,
+                            "currency": "GBP",
+                            "provider": "mock_fallback",
+                        },
+                        "hotel": {
+                            "hotelName": "Fallback Hotel",
+                            "city": "Lyon",
+                            "checkInDate": "2026-09-01",
+                            "checkOutDate": "2026-09-04",
+                            "nights": 3,
+                            "price": 300,
+                            "currency": "GBP",
+                            "provider": "mock_hotel_fallback",
+                        },
+                    },
+                }
+            ]
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            confirm_checkout(payload, db=self.db, current_user=self.user)
+
+        self.assertEqual(context.exception.status_code, 400)
 
     def test_booking_details_persists_travel_documents(self) -> None:
         response = confirm_checkout(self._payload(), db=self.db, current_user=self.user)
@@ -285,12 +330,14 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "flight",
                         "title": "Flight",
+                        "provider": "duffel",
                         "price": 400,
                         "currency": "GBP",
                     },
                     {
                         "type": "hotel",
                         "title": "Hotel",
+                        "provider": "liteapi",
                         "price": 500,
                         "currency": "USD",
                     },
@@ -311,6 +358,7 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "flight",
                         "title": "Flight",
+                        "provider": "duffel",
                         "price": 400,
                         "currency": "GBP",
                         "item_data": {
@@ -353,6 +401,7 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "flight",
                         "title": "Own Flight",
+                        "provider": "duffel",
                         "price": 400,
                         "currency": "GBP",
                     }
@@ -367,6 +416,7 @@ class CheckoutTests(unittest.TestCase):
                     {
                         "type": "hotel",
                         "title": "Other Hotel",
+                        "provider": "liteapi",
                         "price": 250,
                         "currency": "GBP",
                     }

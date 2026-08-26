@@ -68,7 +68,7 @@ export function HotelCard({
             {hotel.refundable ? "Refundable" : "Non-refundable"}
           </span>
         )}
-        <span className="hotel-badge hotel-badge-provider">{hotel.provider === "liteapi" ? "LiteAPI" : "Mock fallback"}</span>
+        <span className="hotel-badge hotel-badge-provider">{hotel.provider === "liteapi" ? "LiteAPI" : "Provider data"}</span>
       </div>
 
       <dl className="hotel-card-details">

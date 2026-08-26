@@ -57,7 +57,7 @@ export function FlightSearch() {
         <h2>Flight Search</h2>
         {response && (
           <span className={`provider-badge provider-${response.provider_used}`}>
-            {response.provider_used === "duffel" ? "Duffel" : "Mock fallback"}
+            {response.provider_used === "duffel" ? "Duffel" : "Unavailable"}
           </span>
         )}
       </div>
@@ -141,6 +141,9 @@ export function FlightSearch() {
           {response.flights.map((flight) => (
             <FlightCard flight={flight} key={flight.id} />
           ))}
+          {response.flights.length === 0 && (
+            <p className="fallback-note">No provider-backed flight options are available for this search.</p>
+          )}
         </div>
       )}
     </section>

@@ -60,7 +60,7 @@ def _location_for_query(_query: str) -> dict:
 
 def _flight_response(price: str = "91.25") -> FlightSearchResponse:
     return FlightSearchResponse(
-        provider_used="mock_fallback",
+        provider_used="duffel",
         flights=[
             NormalisedFlightResult(
                 id="off_homepage",
@@ -83,7 +83,7 @@ def _flight_response(price: str = "91.25") -> FlightSearchResponse:
                 passenger_count=1,
                 price=price,
                 currency="GBP",
-                provider="mock_fallback",
+                provider="duffel",
             )
         ],
     )
@@ -91,7 +91,7 @@ def _flight_response(price: str = "91.25") -> FlightSearchResponse:
 
 def _hotel_response(price: float = 300.0) -> HotelSearchResponse:
     return HotelSearchResponse(
-        provider_used="mock_hotel_fallback",
+        provider_used="liteapi",
         results=[
             NormalisedHotelResult(
                 id="hotel_homepage",
@@ -109,11 +109,27 @@ def _hotel_response(price: float = 300.0) -> HotelSearchResponse:
                 refundable=True,
                 price=price,
                 currency="GBP",
-                provider="mock_hotel_fallback",
+                provider="liteapi",
                 short_id="hotel1",
                 amenities=[],
             )
         ],
+    )
+
+
+def _unavailable_flight_response() -> FlightSearchResponse:
+    return FlightSearchResponse(
+        provider_used="unavailable",
+        flights=[],
+        fallback_reason="No provider-backed flight results.",
+    )
+
+
+def _unavailable_hotel_response() -> HotelSearchResponse:
+    return HotelSearchResponse(
+        provider_used="unavailable",
+        results=[],
+        message="No provider-backed hotel results.",
     )
 
 
@@ -132,6 +148,15 @@ class HomepageEndpointTests(unittest.TestCase):
         self.assertIn("/flights?", payload["searchUrl"])
         self.assertIn("from=EMA", payload["searchUrl"])
         self.assertIn("to=LYS", payload["searchUrl"])
+
+    def test_random_flights_skips_unavailable_provider_results(self) -> None:
+        with (
+            patch("app.main._first_airport_for_homepage", side_effect=_airport_for_query),
+            patch("app.main._search_flights_with_fallback", return_value=_unavailable_flight_response()),
+        ):
+            deals = homepage_random_flights(origin="EMA", limit=1, seed="fixed")
+
+        self.assertEqual(deals, [])
 
     def test_random_packages_returns_total_price_from_flight_and_hotel(self) -> None:
         with (
@@ -153,6 +178,21 @@ class HomepageEndpointTests(unittest.TestCase):
         self.assertEqual(payload["hotelPrice"], 300.0)
         self.assertEqual(payload["totalPrice"], 391.0)
         self.assertIn("/voyager?prompt=", payload["searchUrl"])
+
+    def test_random_package_deal_requires_provider_backed_hotel(self) -> None:
+        with (
+            patch("app.main._search_flights_with_fallback", return_value=_flight_response("91.00")),
+            patch("app.main._search_hotels_with_fallback", return_value=_unavailable_hotel_response()),
+        ):
+            package = _homepage_package_deal(
+                EMA,
+                LYS,
+                LYON_LOCATION,
+                date(2026, 9, 1),
+                date(2026, 9, 4),
+            )
+
+        self.assertIsNone(package)
 
     def test_random_packages_endpoint_degrades_safely_when_provider_fails(self) -> None:
         with (

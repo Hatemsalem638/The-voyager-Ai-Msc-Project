@@ -1,0 +1,748 @@
+[
+  {
+    "id": "flexible_clear_flight_birmingham_paris_dates",
+    "description": "Clear natural-language flight request with explicit origin, destination, and dates.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I need a flight from Birmingham to Paris from 12 September to 16 September",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "flight_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Paris",
+            "destination_type": "city",
+            "destination_code": "CDG",
+            "departure_date": "2026-09-12",
+            "return_date": "2026-09-16",
+            "missing_fields": [],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "CDG",
+          "dates.departureDate": "2026-09-12",
+          "dates.returnDate": "2026-09-16",
+          "latestVisibleResultType": "flights"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "CDG",
+            "departureDate": "2026-09-12",
+            "returnDate": "2026-09-16"
+          }
+        ],
+        "expected_response_contains": [
+          "flight options",
+          "BHX to CDG"
+        ],
+        "forbidden_response_text": [
+          "LHR to LHR",
+          "Please provide your exact departure"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_clear_hotel_london_dates",
+    "description": "Clear hotel request should search hotels with supplied city and stay length.",
+    "initial_state": {},
+    "turns": [
+      {
+        "user_message": "Find me a hotel in London from 18 September for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "hotel",
+            "intent": "hotel_search",
+            "destination_text": "London",
+            "destination_type": "city",
+            "departure_date": "2026-09-18",
+            "nights": 3,
+            "missing_fields": [],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingHotelRequest": null,
+          "latestVisibleResultType": "hotels"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "hotels",
+            "city": "London",
+            "checkInDate": "2026-09-18",
+            "checkOutDate": "2026-09-21"
+          }
+        ],
+        "expected_response_contains": [
+          "hotel option"
+        ],
+        "forbidden_response_text": [
+          "When do you want to check in"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_broad_skiing_trip_asks_for_date",
+    "description": "Vague activity-based destination discovery should preserve skiing and ask for a departure date instead of guessing.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want somewhere I can ski for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "selectedDestination": null,
+          "tripDurationNights": 3,
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_list_contains": {
+          "requiredActivities": [
+            "skiing"
+          ]
+        },
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        },
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_package_region_missing_details",
+    "description": "Broad package request should store origin/region/month candidates and ask for exact dates/city.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "Can you build me a holiday package to Florida from Birmingham in November?",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "package",
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Florida",
+            "destination_type": "region",
+            "destination_candidates": [
+              "MCO",
+              "MIA",
+              "TPA",
+              "FLL"
+            ],
+            "date_text": "in November",
+            "month": "2026-11",
+            "departure_date": null,
+            "return_date": null,
+            "missing_fields": [
+              "exact_dates",
+              "destination_airport_choice"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "pendingTripRequest.intent": "package_search",
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Florida",
+          "month": "2026-11",
+          "dates.departureDate": null,
+          "dates.returnDate": null
+        },
+        "expected_list_contains": {
+          "destinationCandidates[].airportCode": [
+            "MCO",
+            "MIA",
+            "TPA",
+            "FLL"
+          ]
+        },
+        "expected_response_contains": [
+          "Florida",
+          "exact"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_destination_clarification_day_answer",
+    "description": "Date-only answer to a destination-discovery clarification should resume the pending discovery.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "I want to fly somewhere for skiing for 3 nights",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_type": "unknown",
+            "requiredActivities": [
+              "skiing"
+            ],
+            "activityPreferences": [
+              "skiing"
+            ],
+            "tripDurationNights": 3,
+            "missing_fields": [
+              "departure_date"
+            ],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_response_contains": [
+          "When do you want to depart"
+        ],
+        "expected_pendingAction": {
+          "type": "suggest_destinations"
+        },
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      },
+      {
+        "user_message": "19th of this month",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "mocked_clarification_answer": {
+          "resolved": true,
+          "departure_date": "2026-08-19",
+          "return_date": null,
+          "nights": null
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "dates.departureDate": "2026-08-19",
+          "dates.returnDate": "2026-08-22",
+          "tripDurationNights": 3,
+          "latestVisibleResultType": "destinations"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "destinations"
+          }
+        ],
+        "expected_response_contains": [
+          "destination ideas"
+        ],
+        "forbidden_response_text": [
+          "When do you want to depart"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_visible_package_cheapest_and_second_cart",
+    "description": "Visible package result follow-ups should answer and add a numbered package without new provider calls.",
+    "initial_state": {
+      "active_trip": {
+        "origin": {
+          "city": "Birmingham",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Lyon",
+          "country": "France",
+          "airportCode": "LYS",
+          "airportName": "Lyon-Saint Exupery Airport"
+        },
+        "dates": {
+          "departureDate": "2026-09-15",
+          "returnDate": "2026-09-19"
+        },
+        "tripDurationNights": 4,
+        "requestedProducts": [
+          "packages"
+        ],
+        "latestVisibleResultType": "packages",
+        "latestPackageOptions": [
+          {
+            "packageId": "PKG-LYS-1",
+            "optionNumber": 1,
+            "destinationCity": "Lyon",
+            "destinationAirportCode": "LYS",
+            "flight": {
+              "offerId": "eval-offer-1",
+              "airline": "Voyage Airways",
+              "origin": "BHX",
+              "destination": "LYS",
+              "departureDate": "2026-09-15",
+              "returnDate": "2026-09-19",
+              "cabin": "economy",
+              "price": 120,
+              "currency": "GBP",
+              "provider": "duffel"
+            },
+            "hotel": {
+              "hotelId": "eval-hotel-1",
+              "hotelName": "Lyon Central Hotel",
+              "city": "Lyon",
+              "checkInDate": "2026-09-15",
+              "checkOutDate": "2026-09-19",
+              "nights": 4,
+              "price": 300,
+              "currency": "GBP",
+              "provider": "liteapi"
+            },
+            "totalPrice": 420,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight: duffel; hotel: liteapi"
+          },
+          {
+            "packageId": "PKG-LYS-2",
+            "optionNumber": 2,
+            "destinationCity": "Lyon",
+            "destinationAirportCode": "LYS",
+            "flight": {
+              "offerId": "eval-offer-2",
+              "airline": "Voyage Airways",
+              "origin": "BHX",
+              "destination": "LYS",
+              "departureDate": "2026-09-15",
+              "returnDate": "2026-09-19",
+              "cabin": "economy",
+              "price": 100,
+              "currency": "GBP",
+              "provider": "duffel"
+            },
+            "hotel": {
+              "hotelId": "eval-hotel-2",
+              "hotelName": "Lyon Riverside Hotel",
+              "city": "Lyon",
+              "checkInDate": "2026-09-15",
+              "checkOutDate": "2026-09-19",
+              "nights": 4,
+              "price": 290,
+              "currency": "GBP",
+              "provider": "liteapi"
+            },
+            "totalPrice": 390,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight: duffel; hotel: liteapi"
+          }
+        ]
+      }
+    },
+    "turns": [
+      {
+        "user_message": "which is cheapest?",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "select_cheapest",
+            "result_type": "package",
+            "use_visible_results": true
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "latestVisibleResultType": "packages"
+        },
+        "expected_response_contains": [
+          "cheapest package"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      },
+      {
+        "user_message": "add the second one",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "add_option_to_cart",
+            "result_type": "package",
+            "option_number": 2,
+            "use_visible_results": true
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "cart.status": "active",
+          "selectedPackageOption.optionNumber": 2,
+          "latestVisibleResultType": "cart"
+        },
+        "expected_response_contains": [
+          "cart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_book_it_uses_current_package_selection",
+    "description": "Informal book-it wording should add the current visible package selection to cart.",
+    "initial_state": {
+      "active_trip": {
+        "origin": {
+          "city": "Birmingham",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Lyon",
+          "country": "France",
+          "airportCode": "LYS",
+          "airportName": "Lyon-Saint Exupery Airport"
+        },
+        "dates": {
+          "departureDate": "2026-09-15",
+          "returnDate": "2026-09-19"
+        },
+        "tripDurationNights": 4,
+        "latestVisibleResultType": "packages",
+        "latestPackageOptions": [
+          {
+            "packageId": "PKG-LYS-1",
+            "optionNumber": 1,
+            "destinationCity": "Lyon",
+            "destinationAirportCode": "LYS",
+            "flight": {
+              "offerId": "eval-offer-1",
+              "airline": "Voyage Airways",
+              "origin": "BHX",
+              "destination": "LYS",
+              "departureDate": "2026-09-15",
+              "returnDate": "2026-09-19",
+              "cabin": "economy",
+              "price": 120,
+              "currency": "GBP",
+              "provider": "duffel"
+            },
+            "hotel": {
+              "hotelId": "eval-hotel-1",
+              "hotelName": "Lyon Central Hotel",
+              "city": "Lyon",
+              "checkInDate": "2026-09-15",
+              "checkOutDate": "2026-09-19",
+              "nights": 4,
+              "price": 300,
+              "currency": "GBP",
+              "provider": "liteapi"
+            },
+            "totalPrice": 420,
+            "currency": "GBP",
+            "nights": 4,
+            "passengers": 1,
+            "rooms": 1,
+            "reasons": [
+              "Includes return flight and hotel stay"
+            ],
+            "warnings": [],
+            "providerSummary": "Flight: duffel; hotel: liteapi"
+          }
+        ],
+        "currentPackageOption": {
+          "packageId": "PKG-LYS-1",
+          "optionNumber": 1,
+          "destinationCity": "Lyon",
+          "destinationAirportCode": "LYS",
+          "flight": {
+            "offerId": "eval-offer-1",
+            "airline": "Voyage Airways",
+            "origin": "BHX",
+            "destination": "LYS",
+            "departureDate": "2026-09-15",
+            "returnDate": "2026-09-19",
+            "cabin": "economy",
+            "price": 120,
+            "currency": "GBP",
+            "provider": "duffel"
+          },
+          "hotel": {
+            "hotelId": "eval-hotel-1",
+            "hotelName": "Lyon Central Hotel",
+            "city": "Lyon",
+            "checkInDate": "2026-09-15",
+            "checkOutDate": "2026-09-19",
+            "nights": 4,
+            "price": 300,
+            "currency": "GBP",
+            "provider": "liteapi"
+          },
+          "totalPrice": 420,
+          "currency": "GBP",
+          "nights": 4,
+          "passengers": 1,
+          "rooms": 1,
+          "reasons": [
+            "Includes return flight and hotel stay"
+          ],
+          "warnings": [],
+          "providerSummary": "Flight: duffel; hotel: liteapi"
+        }
+      }
+    },
+    "turns": [
+      {
+        "user_message": "book it",
+        "mocked_llama_output": {
+          "tool": "handle_visible_results",
+          "arguments": {
+            "action": "add_selected_to_cart",
+            "result_type": "package",
+            "use_current_selection": true,
+            "use_visible_results": true
+          }
+        },
+        "expected_tool": "handle_visible_results",
+        "expected_active_state": {
+          "cart.status": "active",
+          "selectedPackageOption.optionNumber": 1
+        },
+        "expected_response_contains": [
+          "cart"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_explicit_destination_correction_with_dates",
+    "description": "A user correction with a new explicit destination and dates should replace stale package destination context.",
+    "initial_state": {
+      "active_trip": {
+        "origin": {
+          "city": "Birmingham",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Orlando",
+          "country": "United States",
+          "airportCode": "MCO",
+          "airportName": "Orlando International Airport",
+          "source": "selected_region_candidate"
+        },
+        "dates": {
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19"
+        },
+        "tripDurationNights": 4,
+        "latestVisibleResultType": "packages",
+        "requestedProducts": [
+          "packages"
+        ]
+      }
+    },
+    "turns": [
+      {
+        "user_message": "Actually make it Miami from 15 November to 19 November",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "package",
+            "intent": "package_search",
+            "destination_text": "Miami",
+            "destination_type": "city",
+            "destination_code": "MIA",
+            "departure_date": "2026-11-15",
+            "return_date": "2026-11-19",
+            "missing_fields": [],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "MIA",
+          "dates.departureDate": "2026-11-15",
+          "dates.returnDate": "2026-11-19"
+        },
+        "expected_pendingAction": {
+          "type": "build_package",
+          "destination": "MIA",
+          "departureDate": "2026-11-15",
+          "returnDate": "2026-11-19"
+        },
+        "expected_response_contains": [
+          "Miami International Airport"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels"
+        ],
+        "forbidden_response_text": [
+          "MCO to"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_invalid_candidate_rejected",
+    "description": "Invalid but valid-looking destination candidate codes should be rejected before provider execution.",
+    "initial_state": {},
+    "turns": [
+      {
+        "user_message": "I want a package to Atlantis from Birmingham in November",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "package",
+            "intent": "package_search",
+            "origin_text": "Birmingham",
+            "origin_code": "BHX",
+            "destination_text": "Atlantis",
+            "destination_region": "Atlantis",
+            "destination_type": "region",
+            "destination_candidates": [
+              "XXX"
+            ],
+            "date_text": "in November",
+            "month": "2026-11",
+            "missing_fields": [
+              "exact_dates",
+              "destination_airport_choice"
+            ]
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "destinationRegion.name": "Atlantis",
+          "selectedDestination": null
+        },
+        "expected_response_contains": [
+          "city or airport"
+        ],
+        "forbidden_response_text": [
+          "XXX"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flexible_unrelated_non_travel_no_provider_calls",
+    "description": "Unrelated non-travel input should stay in help/clarification space and should not call providers.",
+    "initial_state": {},
+    "turns": [
+      {
+        "user_message": "Can you write my dissertation introduction for me?",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "expected_tool": "general_help",
+        "expected_response_contains": [
+          "The Voyager"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages",
+          "destinations"
+        ]
+      }
+    ]
+  }
+]
