@@ -1,0 +1,173 @@
+[
+  {
+    "id": "package_budget_followup_preserves_confirmed_trip",
+    "description": "A budget-only follow-up after visible package results must preserve the confirmed route and dates and filter existing packages.",
+    "initial_state": {
+      "active_trip": {
+        "origin": {
+          "city": "Manchester",
+          "country": "United Kingdom",
+          "airportCode": "MAN",
+          "airportName": "Manchester Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Barcelona",
+          "country": "Spain",
+          "airportCode": "BCN",
+          "airportName": "Barcelona-El Prat Josep Tarradellas Airport",
+          "source": "explicit_destination",
+          "confirmed": true
+        },
+        "destinationRegion": null,
+        "destinationCandidates": [],
+        "dates": {
+          "departureDate": "2026-09-18",
+          "returnDate": "2026-09-23"
+        },
+        "month": "2026-09",
+        "tripDurationNights": 5,
+        "passengerCount": 1,
+        "requestedProducts": [
+          "packages"
+        ],
+        "pendingTripRequest": {
+          "intent": "package_search",
+          "selectedDestination": {
+            "city": "Barcelona",
+            "country": "Spain",
+            "airportCode": "BCN",
+            "airportName": "Barcelona-El Prat Josep Tarradellas Airport",
+            "confirmed": true
+          },
+          "dates": {
+            "departureDate": "2026-09-18",
+            "returnDate": "2026-09-23"
+          },
+          "month": "2026-09",
+          "missingFields": []
+        },
+        "latestVisibleResultType": "packages",
+        "latestPackageOptions": [
+          {
+            "packageId": "PKG-BCN-1",
+            "optionNumber": 1,
+            "destinationCity": "Barcelona",
+            "destinationAirportCode": "BCN",
+            "flight": {
+              "offerId": "eval-bcn-offer-1",
+              "airline": "Vueling",
+              "origin": "MAN",
+              "destination": "BCN",
+              "departureDate": "2026-09-18",
+              "returnDate": "2026-09-23",
+              "cabin": "economy",
+              "price": 520,
+              "currency": "GBP",
+              "provider": "duffel"
+            },
+            "hotel": {
+              "hotelId": "eval-bcn-hotel-1",
+              "hotelName": "Barcelona Princess",
+              "city": "Barcelona",
+              "checkInDate": "2026-09-18",
+              "checkOutDate": "2026-09-23",
+              "nights": 5,
+              "price": 220,
+              "currency": "GBP",
+              "provider": "liteapi"
+            },
+            "totalPrice": 740,
+            "currency": "GBP",
+            "nights": 5,
+            "passengers": 1,
+            "rooms": 1,
+            "reasons": [],
+            "warnings": [],
+            "providerSummary": "Flight: duffel; hotel: liteapi"
+          },
+          {
+            "packageId": "PKG-BCN-2",
+            "optionNumber": 2,
+            "destinationCity": "Barcelona",
+            "destinationAirportCode": "BCN",
+            "flight": {
+              "offerId": "eval-bcn-offer-2",
+              "airline": "Vueling",
+              "origin": "MAN",
+              "destination": "BCN",
+              "departureDate": "2026-09-18",
+              "returnDate": "2026-09-23",
+              "cabin": "economy",
+              "price": 704,
+              "currency": "GBP",
+              "provider": "duffel"
+            },
+            "hotel": {
+              "hotelId": "eval-bcn-hotel-2",
+              "hotelName": "Acta Voraport",
+              "city": "Barcelona",
+              "checkInDate": "2026-09-18",
+              "checkOutDate": "2026-09-23",
+              "nights": 5,
+              "price": 220,
+              "currency": "GBP",
+              "provider": "liteapi"
+            },
+            "totalPrice": 924,
+            "currency": "GBP",
+            "nights": 5,
+            "passengers": 1,
+            "rooms": 1,
+            "reasons": [],
+            "warnings": [],
+            "providerSummary": "Flight: duffel; hotel: liteapi"
+          }
+        ]
+      }
+    },
+    "turns": [
+      {
+        "user_message": "but my budget is 800 pounds",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "intent": "package_search",
+            "requested_product": "package",
+            "use_active_trip_state": true,
+            "destination_text": "Barcelona",
+            "destination_type": "region",
+            "destination_candidates": [
+              "BCN"
+            ],
+            "month": "2026-09",
+            "budget_amount": 800,
+            "budget_currency": "GBP"
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "MAN",
+          "selectedDestination.airportCode": "BCN",
+          "destinationRegion": null,
+          "dates.departureDate": "2026-09-18",
+          "dates.returnDate": "2026-09-23",
+          "budget": 800,
+          "latestVisibleResultType": "packages"
+        },
+        "expected_response_contains": [
+          "within your GBP 800 budget"
+        ],
+        "forbidden_response_text": [
+          "several main airport choices",
+          "Please provide your exact departure and return dates"
+        ],
+        "forbidden_provider_calls": [
+          "flights",
+          "hotels",
+          "packages"
+        ]
+      }
+    ]
+  }
+]

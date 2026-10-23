@@ -1061,7 +1061,3 @@ class PreferenceUpdate(BaseModel):
     hotel_location_preference: str | None = Field(default=None, max_length=120)
     accessibility_needs: Any | None = None
     sustainability_preference: str | None = Field(default=None, max_length=80)
-
-
-# Future schemas can describe structured flights, hotels, users, bookings,
-# Expedia responses, voice transcripts, and Llama-generated travel plans.

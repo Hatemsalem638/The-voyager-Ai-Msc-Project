@@ -2107,6 +2107,23 @@ def _extract_trip_duration_nights(message: str) -> int | None:
 NUMBER_TOKEN_PATTERN = r"\d{1,5}|one|two|three|four|five|six|seven|eight|nine|ten|a"
 
 
+def _extract_stay_duration_nights(message: str) -> int | None:
+    normalized = _normalize_control_message(message)
+    explicit_night_match = re.search(
+        rf"\b({NUMBER_TOKEN_PATTERN})\s+nights?\b",
+        normalized,
+    )
+    if explicit_night_match:
+        return _parse_duration_number(explicit_night_match.group(1))
+    explicit_day_match = re.search(
+        rf"\b({NUMBER_TOKEN_PATTERN})\s+days?\b",
+        normalized,
+    )
+    if explicit_day_match:
+        return _parse_duration_number(explicit_day_match.group(1))
+    return None
+
+
 def _parse_duration_number(value: str | None) -> int | None:
     text = str(value or "").strip().lower()
     if text == "a":
@@ -2577,7 +2594,8 @@ def _merge_pending_destination_discovery_dates(
 ) -> DestinationDiscoveryRequest | None:
     existing_departure = _destination_departure_date(pending_request)
     departure_iso = existing_departure or _resolve_destination_followup_departure(message)
-    nights = pending_request.trip_duration_nights or _extract_trip_duration_nights(message)
+    explicit_nights = _extract_stay_duration_nights(message)
+    nights = explicit_nights or pending_request.trip_duration_nights
     return_iso: str | None = None
     origin_payload: dict[str, Any] | None = None
     if departure_iso:
@@ -3197,6 +3215,7 @@ def _destination_to_active_trip_destination(
         "recommendationId": (
             f"{airport_code}:{option_number}" if airport_code and option_number else airport_code
         ),
+        "confirmed": True,
     }
 
 
@@ -5365,6 +5384,42 @@ def _destination_region_from_structured_slots(
     }
 
 
+def _region_refers_to_confirmed_destination(
+    active_trip: dict[str, Any],
+    region: dict[str, Any],
+) -> bool:
+    selected = _active_trip_destination(active_trip)
+    if not isinstance(selected, dict):
+        return False
+    if selected.get("confirmed") is not True and selected.get("source") != "selected_recommendation":
+        return False
+    selected_code = str(selected.get("airportCode") or "").upper()
+    candidate_codes = {
+        str(code).upper()
+        for code in region.get("candidateCodes", [])
+        if str(code or "").strip()
+    }
+    if selected_code and selected_code in candidate_codes:
+        return True
+    region_names = {
+        _normalize_control_message(str(region.get("name") or "")),
+        _normalize_control_message(str(region.get("displayName") or "")),
+        _normalize_control_message(str(region.get("country") or "")),
+    }
+    selected_scope = {
+        _normalize_control_message(str(selected.get("country") or "")),
+    }
+    existing_region = active_trip.get("destinationRegion")
+    if isinstance(existing_region, dict):
+        selected_scope.add(
+            _normalize_control_message(str(existing_region.get("name") or ""))
+        )
+        selected_scope.add(
+            _normalize_control_message(str(existing_region.get("displayName") or ""))
+        )
+    return bool((region_names - {""}) & (selected_scope - {""}))
+
+
 def _candidate_code_from_value(value: Any) -> str | None:
     if isinstance(value, dict):
         value = value.get("airportCode") or value.get("code")
@@ -5793,6 +5848,18 @@ def _store_structured_trip_request(
         or arguments.get("nights")
         or arguments.get("tripDurationNights")
     )
+    has_concrete_date_hint = bool(
+        arguments.get("departure_date")
+        or arguments.get("departureDate")
+        or arguments.get("return_date")
+        or arguments.get("returnDate")
+        or arguments.get("departure_day")
+        or arguments.get("departureDay")
+        or arguments.get("return_day")
+        or arguments.get("returnDay")
+        or arguments.get("nights")
+        or arguments.get("tripDurationNights")
+    )
     has_structured_budget_hint = bool(
         arguments.get("budget_amount")
         or arguments.get("budgetAmount")
@@ -5981,6 +6048,18 @@ def _store_structured_trip_request(
             for candidate in candidates
             if candidate.get("airportCode")
         ]
+        if (
+            _region_refers_to_confirmed_destination(active_trip, region)
+            and (
+                destination is None
+                or _destination_matches_active_selection(active_trip, destination)
+            )
+        ):
+            active_trip["destinationCandidates"] = (
+                candidates or active_trip.get("destinationCandidates") or []
+            )
+            region = None
+            destination = None
     if region:
         if use_existing and active_trip.get("selectedDestination") and not (
             arguments.get("destination_code") or arguments.get("destinationCode")
@@ -6182,11 +6261,19 @@ def _store_structured_trip_request(
     dates = _active_trip_dates(active_trip)
     should_inherit_dates = (
         use_existing
-        and not has_structured_date_hint
         and not departure
         and not return_date
-        and not has_explicit_origin
-        and not has_explicit_destination
+        and (
+            not has_structured_date_hint
+            or (
+                not has_concrete_date_hint
+                and bool(dates.get("departureDate"))
+                and (
+                    month is None
+                    or str(dates.get("departureDate") or "").startswith(f"{month}-")
+                )
+            )
+        )
     )
     active_trip["dates"] = {
         "departureDate": departure or (dates.get("departureDate") if should_inherit_dates else None),
@@ -6286,11 +6373,18 @@ def _store_structured_trip_request(
     }
     active_trip["pendingTripRequest"]["missingFields"] = _broad_trip_missing_fields(active_trip)
     if "packages" in requested_products:
+        active_dates = _active_trip_dates(active_trip)
+        month_changes_existing_dates = bool(
+            month
+            and active_dates.get("departureDate")
+            and not str(active_dates.get("departureDate") or "").startswith(f"{month}-")
+        )
         route_or_date_changed = any(
             [
                 has_explicit_origin,
                 has_explicit_destination,
-                has_structured_date_hint,
+                has_concrete_date_hint,
+                month_changes_existing_dates,
             ]
         )
         pending_payload = _package_pending_action_payload(active_trip)
@@ -6799,6 +6893,90 @@ def _execute_pending_package_build_confirmation(
     return _execute_package_request_if_possible(db, session, request, force=True)
 
 
+def _execute_pending_trip_date_answer_if_possible(
+    db: Session,
+    session: ChatSession,
+    request: ChatRequest,
+) -> ChatResponse | None:
+    active_trip = _active_trip_for_session(session.id, db)
+    pending_trip = active_trip.get("pendingTripRequest")
+    if not isinstance(pending_trip, dict):
+        return None
+    if not (_active_trip_destination(active_trip) or active_trip.get("destinationRegion")):
+        return None
+    dates = _active_trip_dates(active_trip)
+    if dates.get("departureDate") and dates.get("returnDate"):
+        return None
+
+    departure_iso, return_iso = _extract_departure_return_dates_from_message(
+        request.message,
+        active_trip,
+    )
+    nights = _extract_stay_duration_nights(request.message)
+    if departure_iso is None and return_iso is None and nights is None:
+        answer = resolve_clarification_answer_with_llama(
+            asked_question=_structured_trip_reply(active_trip),
+            user_reply=request.message,
+            awaiting=["departure_date", "return_date", "nights"],
+        )
+        if answer and answer.resolved:
+            if answer.departure_date:
+                departure_iso = validate_future_iso(answer.departure_date)
+            if answer.return_date:
+                return_iso = validate_future_iso(answer.return_date)
+            if answer.nights:
+                nights = answer.nights
+
+    if departure_iso is None:
+        return None
+    if return_iso:
+        try:
+            if date.fromisoformat(return_iso) <= date.fromisoformat(departure_iso):
+                return_iso = None
+        except ValueError:
+            return_iso = None
+    if return_iso is None and nights:
+        return_iso = (
+            date.fromisoformat(departure_iso) + timedelta(days=int(nights))
+        ).isoformat()
+    if return_iso is None:
+        return None
+
+    try:
+        resolved_nights = max(
+            1,
+            (date.fromisoformat(return_iso) - date.fromisoformat(departure_iso)).days,
+        )
+    except ValueError:
+        return None
+
+    products = active_trip.get("requestedProducts") or []
+    requested_product = (
+        "package"
+        if "packages" in products
+        else "hotel"
+        if "hotels" in products
+        else "flight"
+    )
+    return _execute_prepare_trip_request_tool(
+        TravelToolCall(
+            tool="prepare_trip_request",
+            arguments={
+                "requested_product": requested_product,
+                "intent": pending_trip.get("intent") or f"{requested_product}_search",
+                "departure_date": departure_iso,
+                "return_date": return_iso,
+                "nights": resolved_nights,
+                "missing_fields": [],
+                "use_active_trip_state": True,
+            },
+        ),
+        db,
+        session,
+        request,
+    )
+
+
 def _flight_search_for_candidate(
     origin: dict[str, Any],
     destination: dict[str, Any],
@@ -6918,7 +7096,26 @@ def _execute_prepare_trip_request_tool(
     session: ChatSession,
     request: ChatRequest,
 ) -> ChatResponse:
+    before_active_trip = _active_trip_for_session(session.id, db)
     active_trip = _store_structured_trip_request(db, session.id, tool_call.arguments)
+    budget_update_response = _execute_package_budget_update_from_visible_results(
+        db,
+        session,
+        request,
+        before_active_trip,
+        active_trip,
+        tool_call.arguments,
+    )
+    if budget_update_response is not None:
+        return budget_update_response
+    if (
+        _has_structured_passenger_update(tool_call.arguments)
+        and _latest_package_options(before_active_trip)
+        and _package_trip_signature(before_active_trip) == _package_trip_signature(active_trip)
+        and "packages" in active_trip.get("requestedProducts", [])
+        and build_package_request_from_active_trip(active_trip)[0] is not None
+    ):
+        return _execute_package_request_if_possible(db, session, request, force=True)
     if _has_broad_activity_trip_frame(active_trip):
         discovery_request = _destination_discovery_request_from_active_trip(active_trip)
         if discovery_request is not None:
@@ -9000,15 +9197,18 @@ def _execute_package_request_if_possible(
         )
         if package_request.max_budget is not None:
             budget_label = f"{cheapest['currency']} {package_request.max_budget:,.0f}"
-            if any(
-                float(package.get("totalPrice") or 0) <= package_request.max_budget
+            in_budget_count = sum(
+                1
                 for package in packages
-            ):
-                reply += f" These options include choices within your {budget_label} budget."
+                if float(package.get("totalPrice") or 0) <= package_request.max_budget
+            )
+            if in_budget_count:
+                noun = "package" if in_budget_count == 1 else "packages"
+                reply += f" I found {in_budget_count} {noun} within your {budget_label} budget."
             else:
                 reply += (
-                    f" I could not find packages under your {budget_label} budget, "
-                    "but these are the closest options I found."
+                    f" I could not find a package within your {budget_label} budget. "
+                    f"The closest option is {cheapest['currency']} {float(cheapest.get('totalPrice') or 0):,.2f}."
                 )
         if destination.get("airportCode"):
             reply += (
@@ -9036,6 +9236,109 @@ def _execute_package_request_if_possible(
         intent,
         reply,
         _package_results_for_chat(packages),
+    )
+
+
+def _package_trip_signature(active_trip: dict[str, Any]) -> tuple[str | None, ...]:
+    origin = _active_trip_origin(active_trip) or {}
+    destination = _active_trip_destination(active_trip) or {}
+    dates = _active_trip_dates(active_trip)
+    return (
+        str(origin.get("airportCode") or "").upper() or None,
+        str(destination.get("airportCode") or "").upper() or None,
+        dates.get("departureDate"),
+        dates.get("returnDate"),
+    )
+
+
+def _has_structured_budget_update(arguments: dict[str, Any]) -> bool:
+    return any(
+        arguments.get(key) is not None
+        for key in ["budget_amount", "budgetAmount", "budget", "maxBudget", "max_budget"]
+    )
+
+
+def _has_structured_passenger_update(arguments: dict[str, Any]) -> bool:
+    return any(
+        arguments.get(key) is not None
+        for key in ["passenger_count", "passengerCount", "passengers", "adults"]
+    )
+
+
+def _package_budget_update_reply(
+    active_trip: dict[str, Any],
+    packages: list[dict[str, Any]],
+    budget: float,
+) -> str:
+    origin = _active_trip_origin(active_trip) or {}
+    destination = _active_trip_destination(active_trip) or {}
+    dates = _active_trip_dates(active_trip)
+    currency = str((packages[0].get("currency") if packages else active_trip.get("budgetCurrency")) or "GBP")
+    budget_label = f"{currency} {budget:,.0f}"
+    if not packages:
+        return f"I could not find a package within your {budget_label} budget."
+    cheapest = packages[0]
+    cheapest_label = f"{currency} {float(cheapest.get('totalPrice') or 0):,.2f}"
+    date_phrase = ""
+    if dates.get("departureDate") and dates.get("returnDate"):
+        date_phrase = (
+            f" from {_display_date_label(dates['departureDate'])} "
+            f"to {_display_date_label(dates['returnDate'])}"
+        )
+    route_phrase = ""
+    if origin.get("airportCode") and destination.get("airportCode"):
+        route_phrase = f" The package route is {origin['airportCode']} to {destination['airportCode']}."
+    if float(cheapest.get("totalPrice") or 0) <= budget:
+        count = len(packages)
+        noun = "package" if count == 1 else "packages"
+        return (
+            f"I found {count} {noun} within your {budget_label} budget. "
+            f"The cheapest package is {cheapest_label}{date_phrase}."
+            f"{route_phrase}"
+        )
+    return (
+        f"I could not find a package within your {budget_label} budget. "
+        f"The closest option is {cheapest_label}{date_phrase}."
+        f"{route_phrase}"
+    )
+
+
+def _execute_package_budget_update_from_visible_results(
+    db: Session,
+    session: ChatSession,
+    request: ChatRequest,
+    before_active_trip: dict[str, Any],
+    active_trip: dict[str, Any],
+    arguments: dict[str, Any],
+) -> ChatResponse | None:
+    if not _has_structured_budget_update(arguments):
+        return None
+    if _package_trip_signature(before_active_trip) != _package_trip_signature(active_trip):
+        return None
+    packages = _latest_package_options(before_active_trip)
+    if not packages:
+        return None
+    try:
+        budget = float(active_trip.get("budget"))
+    except (TypeError, ValueError):
+        return None
+    filtered_packages = _sort_package_options_for_budget(packages, budget)
+    active_trip["latestPackageOptions"] = filtered_packages
+    active_trip["currentPackageOption"] = None
+    active_trip["selectedPackageOption"] = None
+    active_trip["pendingAction"] = None
+    active_trip["latestVisibleResultType"] = "packages"
+    active_trip["status"] = "package_options_ready"
+    active_trip["revision"] = int(active_trip.get("revision") or 0) + 1
+    save_active_trip(db, session.id, active_trip)
+    _set_last_tool_used(session.id, "handle_visible_results", db)
+    return _tool_response(
+        db,
+        session,
+        request,
+        _build_control_intent(request.message, "package_search"),
+        _package_budget_update_reply(active_trip, filtered_packages, budget),
+        _package_results_for_chat(filtered_packages),
     )
 
 
@@ -9603,6 +9906,22 @@ def _checkout_item_is_provider_backed(item: Any) -> bool:
         package = item_data.get("packageOption") if isinstance(item_data.get("packageOption"), dict) else item_data
         return _is_provider_backed_package_option(package)
     return False
+
+
+def _destination_matches_active_selection(
+    active_trip: dict[str, Any],
+    destination: dict[str, Any] | None,
+) -> bool:
+    selected = _active_trip_destination(active_trip)
+    if not selected or not destination:
+        return False
+    selected_code = str(selected.get("airportCode") or "").upper()
+    destination_code = str(destination.get("airportCode") or "").upper()
+    if selected_code and destination_code:
+        return selected_code == destination_code
+    selected_city = _normalize_control_message(str(selected.get("city") or ""))
+    destination_city = _normalize_control_message(str(destination.get("city") or ""))
+    return bool(selected_city and destination_city and selected_city == destination_city)
 
 
 def _generate_package_booking_reference(db: Session) -> str:
@@ -14371,6 +14690,19 @@ def _execute_tool_call(
         if destination_suggestion_response is not None:
             return destination_suggestion_response
 
+    if (
+        tool_call.tool in {"select_flight", "show_flight_option", "check_flight_availability"}
+        and _latest_flight_memory(session.id, db) is None
+        and _pending_destination_suggestion_action(_active_trip_for_session(session.id, db)) is not None
+    ):
+        destination_suggestion_response = _execute_pending_destination_suggestion_confirmation(
+            db,
+            session,
+            request,
+        )
+        if destination_suggestion_response is not None:
+            return destination_suggestion_response
+
     if tool_call.tool == "confirm_booking":
         destination_results_confirmation = _execute_destination_results_confirmation_if_possible(
             db,
@@ -14677,7 +15009,6 @@ def _execute_tool_call(
     if cheaper_followup_response is not None:
         return cheaper_followup_response
 
-    # Keep package option flow on the existing fallback path.
     if (
         session.id in PENDING_BOOKINGS
         and _is_package_option_message(request.message)
@@ -14986,6 +15317,13 @@ def _execute_tool_call(
         active_trip_for_general_help = _active_trip_for_session(session.id, db)
         pending_trip_for_general_help = active_trip_for_general_help.get("pendingTripRequest")
         if isinstance(pending_trip_for_general_help, dict):
+            date_answer_response = _execute_pending_trip_date_answer_if_possible(
+                db,
+                session,
+                request,
+            )
+            if date_answer_response is not None:
+                return date_answer_response
             return _execute_prepare_trip_request_tool(
                 TravelToolCall(
                     tool="prepare_trip_request",

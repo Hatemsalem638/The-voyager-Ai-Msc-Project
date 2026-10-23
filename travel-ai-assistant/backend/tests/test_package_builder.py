@@ -9,6 +9,7 @@ from app.database import Base
 from app.main import (
     FLIGHT_SEARCH_MEMORY,
     HOTEL_SEARCH_MEMORY,
+    _build_package_options,
     _execute_tool_call,
     _extract_budget_amount,
     _extract_trip_duration_components,
@@ -24,6 +25,7 @@ from app.schemas import (
     HotelSearchResponse,
     NormalisedFlightResult,
     NormalisedHotelResult,
+    PackageBuildRequest,
     TravelToolCall,
 )
 
@@ -205,6 +207,178 @@ class PackageBuilderTests(unittest.TestCase):
             ],
         )
 
+    @staticmethod
+    def _package_request_with_budget(max_budget: float | None = None) -> PackageBuildRequest:
+        return PackageBuildRequest.model_validate(
+            {
+                "originAirportCode": "MAN",
+                "destinationAirportCode": "BCN",
+                "destinationCity": "Barcelona",
+                "destinationCountry": "Spain",
+                "departureDate": "2026-09-18",
+                "returnDate": "2026-09-23",
+                "passengerCount": 1,
+                "rooms": 1,
+                "adults": 1,
+                "cabin": "economy",
+                "maxBudget": max_budget,
+                "maxPackages": 5,
+            }
+        )
+
+    @staticmethod
+    def _multi_package_flights(request: FlightSearchRequest) -> FlightSearchResponse:
+        flights = []
+        for index, (offer_id, price) in enumerate(
+            [
+                ("offer-low", 520),
+                ("offer-mid", 704),
+                ("offer-high", 777),
+            ],
+            start=1,
+        ):
+            flights.append(
+                NormalisedFlightResult(
+                    id=f"flight-package-{index}",
+                    offer_id=offer_id,
+                    display_id=f"Offer package {index}",
+                    option_number=index,
+                    origin=request.itinerary.origin.code,
+                    destination=request.itinerary.destination.code,
+                    airline="Vueling",
+                    outbound_departure_date=request.itinerary.dates.departure.isoformat(),
+                    return_departure_date=request.itinerary.dates.return_date.isoformat()
+                    if request.itinerary.dates.return_date
+                    else None,
+                    stops=0,
+                    stops_label="Non-stop",
+                    cabin_class=request.preferences.cabin_class,
+                    cabin_class_label=request.preferences.cabin_class.title(),
+                    passenger_count=request.passenger_count,
+                    price=str(price),
+                    currency="GBP",
+                    provider="duffel",
+                )
+            )
+        return FlightSearchResponse(provider_used="duffel", flights=flights)
+
+    @staticmethod
+    def _multi_package_hotels(request: HotelSearchRequest) -> HotelSearchResponse:
+        hotels = []
+        for index, (hotel_id, hotel_name, price, rating) in enumerate(
+            [
+                ("hotel-low", "Barcelona Princess", 220, 4.4),
+                ("hotel-mid", "Acta Voraport", 220, 4.1),
+                ("hotel-high", "Central Barcelona Hotel", 420, 4.7),
+            ],
+            start=1,
+        ):
+            hotels.append(
+                NormalisedHotelResult(
+                    id=hotel_id,
+                    option_number=index,
+                    hotel_name=hotel_name,
+                    location=request.destination.city or "Barcelona",
+                    check_in_date=request.check_in_date.isoformat(),
+                    check_out_date=request.check_out_date.isoformat(),
+                    nights=5,
+                    guest_count=request.guest_count,
+                    room_count=request.room_count,
+                    rating=rating,
+                    board_type="Room only",
+                    room_name="Standard room",
+                    refundable=True,
+                    price=price,
+                    currency="GBP",
+                    provider="liteapi",
+                    short_id=hotel_name,
+                )
+            )
+        return HotelSearchResponse(provider_used="liteapi", results=hotels)
+
+    def _seed_barcelona_package_results(self) -> None:
+        package_request = self._package_request_with_budget()
+        flight_request = FlightSearchRequest.model_validate(
+            {
+                "searchType": "flight",
+                "passengerCount": 1,
+                "itinerary": {
+                    "tripType": "round_trip",
+                    "origin": {"city": "Manchester", "code": "MAN"},
+                    "destination": {"city": "Barcelona", "code": "BCN"},
+                    "dates": {"departure": "2026-09-18", "return": "2026-09-23"},
+                },
+                "preferences": {"cabinClass": "economy", "maxStops": None},
+            }
+        )
+        hotel_request = HotelSearchRequest.model_validate(
+            {
+                "searchType": "hotel",
+                "destination": {"city": "Barcelona"},
+                "checkInDate": "2026-09-18",
+                "checkOutDate": "2026-09-23",
+                "guestCount": 1,
+                "roomCount": 1,
+            }
+        )
+        active_trip = load_active_trip(self.db, self.session.id)
+        active_trip.update(
+            {
+                "revision": 12,
+                "origin": {
+                    "city": "Manchester",
+                    "country": "United Kingdom",
+                    "airportCode": "MAN",
+                    "airportName": "Manchester Airport",
+                    "source": "explicit_origin",
+                },
+                "selectedDestination": {
+                    "city": "Barcelona",
+                    "country": "Spain",
+                    "airportCode": "BCN",
+                    "airportName": "Barcelona-El Prat Josep Tarradellas Airport",
+                    "source": "explicit_destination",
+                    "confirmed": True,
+                },
+                "destinationRegion": None,
+                "destinationCandidates": [],
+                "dates": {
+                    "departureDate": "2026-09-18",
+                    "returnDate": "2026-09-23",
+                    "source": "llama_structured_trip_request",
+                },
+                "month": "2026-09",
+                "tripDurationNights": 5,
+                "passengerCount": 1,
+                "requestedProducts": ["packages"],
+                "pendingTripRequest": {
+                    "intent": "package_search",
+                    "selectedDestination": {
+                        "city": "Barcelona",
+                        "country": "Spain",
+                        "airportCode": "BCN",
+                        "airportName": "Barcelona-El Prat Josep Tarradellas Airport",
+                        "source": "explicit_destination",
+                        "confirmed": True,
+                    },
+                    "dates": {"departureDate": "2026-09-18", "returnDate": "2026-09-23"},
+                    "month": "2026-09",
+                    "missingFields": [],
+                },
+                "latestPackageRequest": package_request.model_dump(by_alias=True, mode="json"),
+                "latestPackageOptions": _build_package_options(
+                    package_request,
+                    self._multi_package_flights(flight_request),
+                    self._multi_package_hotels(hotel_request),
+                    active_trip_revision=12,
+                ),
+                "latestVisibleResultType": "packages",
+                "status": "package_options_ready",
+            }
+        )
+        save_active_trip(self.db, self.session.id, active_trip)
+        self.db.commit()
+
     def test_date_selection_followup_sets_active_trip_dates(self) -> None:
         self._seed_september_comparison()
 
@@ -260,6 +434,208 @@ class PackageBuilderTests(unittest.TestCase):
         active_trip = load_active_trip(self.db, self.session.id)
         self.assertEqual(active_trip["latestVisibleResultType"], "packages")
         self.assertTrue(active_trip["latestPackageOptions"])
+
+    @patch("app.main._search_hotels_with_fallback")
+    @patch("app.main._search_flights_with_fallback")
+    def test_budget_only_followup_preserves_confirmed_package_trip(
+        self,
+        mock_flights,
+        mock_hotels,
+    ) -> None:
+        self._seed_barcelona_package_results()
+
+        response = _execute_tool_call(
+            TravelToolCall(
+                tool="prepare_trip_request",
+                arguments={
+                    "intent": "package_search",
+                    "requested_product": "package",
+                    "use_active_trip_state": True,
+                    "destination_text": "Barcelona",
+                    "destination_type": "region",
+                    "destination_candidates": ["BCN"],
+                    "month": "2026-09",
+                    "budget_amount": 800,
+                    "budget_currency": "GBP",
+                },
+            ),
+            self.db,
+            self.user,
+            self.session,
+            ChatRequest(message="but my budget is 800 pounds"),
+        )
+
+        active_trip = load_active_trip(self.db, self.session.id)
+        self.assertEqual(active_trip["origin"]["airportCode"], "MAN")
+        self.assertEqual(active_trip["selectedDestination"]["airportCode"], "BCN")
+        self.assertIsNone(active_trip.get("destinationRegion"))
+        self.assertEqual(active_trip["dates"]["departureDate"], "2026-09-18")
+        self.assertEqual(active_trip["dates"]["returnDate"], "2026-09-23")
+        self.assertEqual(active_trip["budget"], 800)
+        self.assertIsNone(active_trip.get("pendingAction"))
+        self.assertTrue(response.results.packages)
+        self.assertNotIn("several main airport choices", response.reply)
+        self.assertNotIn("Please provide your exact departure and return dates", response.reply)
+        mock_flights.assert_not_called()
+        mock_hotels.assert_not_called()
+
+    @patch("app.main._search_hotels_with_fallback")
+    @patch("app.main._search_flights_with_fallback")
+    def test_passenger_only_followup_preserves_confirmed_package_trip(
+        self,
+        mock_flights,
+        mock_hotels,
+    ) -> None:
+        mock_flights.side_effect = self._multi_package_flights
+        mock_hotels.side_effect = self._multi_package_hotels
+        self._seed_barcelona_package_results()
+
+        response = _execute_tool_call(
+            TravelToolCall(
+                tool="prepare_trip_request",
+                arguments={
+                    "intent": "package_search",
+                    "requested_product": "package",
+                    "use_active_trip_state": True,
+                    "passenger_count": 2,
+                },
+            ),
+            self.db,
+            self.user,
+            self.session,
+            ChatRequest(message="make it for 2 people"),
+        )
+
+        active_trip = load_active_trip(self.db, self.session.id)
+        self.assertEqual(active_trip["selectedDestination"]["airportCode"], "BCN")
+        self.assertEqual(active_trip["dates"]["departureDate"], "2026-09-18")
+        self.assertEqual(active_trip["dates"]["returnDate"], "2026-09-23")
+        self.assertEqual(active_trip["passengerCount"], 2)
+        self.assertTrue(response.results.packages)
+        self.assertNotIn("Please provide your exact departure and return dates", response.reply)
+        flight_request = mock_flights.call_args.args[0]
+        hotel_request = mock_hotels.call_args.args[0]
+        self.assertEqual(flight_request.passenger_count, 2)
+        self.assertEqual(hotel_request.guest_count, 2)
+
+    def test_budgeted_package_options_only_show_in_budget_results(self) -> None:
+        package_request = self._package_request_with_budget(800)
+        flight_request = FlightSearchRequest.model_validate(
+            {
+                "searchType": "flight",
+                "passengerCount": 1,
+                "itinerary": {
+                    "tripType": "round_trip",
+                    "origin": {"city": "Manchester", "code": "MAN"},
+                    "destination": {"city": "Barcelona", "code": "BCN"},
+                    "dates": {"departure": "2026-09-18", "return": "2026-09-23"},
+                },
+                "preferences": {"cabinClass": "economy", "maxStops": None},
+            }
+        )
+        hotel_request = HotelSearchRequest.model_validate(
+            {
+                "searchType": "hotel",
+                "destination": {"city": "Barcelona"},
+                "checkInDate": "2026-09-18",
+                "checkOutDate": "2026-09-23",
+                "guestCount": 1,
+                "roomCount": 1,
+            }
+        )
+
+        packages = _build_package_options(
+            package_request,
+            self._multi_package_flights(flight_request),
+            self._multi_package_hotels(hotel_request),
+            active_trip_revision=1,
+        )
+
+        self.assertTrue(packages)
+        self.assertTrue(all(package["totalPrice"] <= 800 for package in packages))
+        self.assertEqual([package["optionNumber"] for package in packages], list(range(1, len(packages) + 1)))
+
+    @patch("app.main._search_hotels_with_fallback")
+    @patch("app.main._search_flights_with_fallback")
+    def test_package_reply_says_no_in_budget_and_shows_closest_option(
+        self,
+        mock_flights,
+        mock_hotels,
+    ) -> None:
+        mock_flights.side_effect = self._multi_package_flights
+        mock_hotels.side_effect = self._multi_package_hotels
+        self._seed_barcelona_package_results()
+        active_trip = load_active_trip(self.db, self.session.id)
+        active_trip["budget"] = 700
+        save_active_trip(self.db, self.session.id, active_trip)
+        self.db.commit()
+
+        response = _execute_tool_call(
+            TravelToolCall(tool="general_help", arguments={}),
+            self.db,
+            self.user,
+            self.session,
+            ChatRequest(message="find me a full package"),
+        )
+
+        self.assertEqual(len(response.results.packages), 1)
+        self.assertGreater(response.results.packages[0]["totalPrice"], 700)
+        self.assertIn("I could not find a package within your GBP 700 budget", response.reply)
+        self.assertIn("closest option", response.reply)
+
+    def test_package_builder_deduplicates_and_renumbers_options(self) -> None:
+        package_request = self._package_request_with_budget()
+        flight_request = FlightSearchRequest.model_validate(
+            {
+                "searchType": "flight",
+                "passengerCount": 1,
+                "itinerary": {
+                    "tripType": "round_trip",
+                    "origin": {"city": "Manchester", "code": "MAN"},
+                    "destination": {"city": "Barcelona", "code": "BCN"},
+                    "dates": {"departure": "2026-09-18", "return": "2026-09-23"},
+                },
+                "preferences": {"cabinClass": "economy", "maxStops": None},
+            }
+        )
+        hotel_request = HotelSearchRequest.model_validate(
+            {
+                "searchType": "hotel",
+                "destination": {"city": "Barcelona"},
+                "checkInDate": "2026-09-18",
+                "checkOutDate": "2026-09-23",
+                "guestCount": 1,
+                "roomCount": 1,
+            }
+        )
+        flights = self._multi_package_flights(flight_request)
+        duplicate_flight = flights.flights[0].model_copy(update={"id": "duplicate-flight"})
+        flights.flights.append(duplicate_flight)
+        hotels = self._multi_package_hotels(hotel_request)
+        duplicate_hotel = hotels.results[0].model_copy(update={"option_number": 99})
+        hotels.results.append(duplicate_hotel)
+
+        packages = _build_package_options(
+            package_request,
+            flights,
+            hotels,
+            active_trip_revision=1,
+        )
+
+        keys = {
+            (
+                package["flight"]["offerId"],
+                package["hotel"]["hotelId"],
+                package["flight"]["departureDate"],
+                package["flight"].get("returnDate"),
+                package["hotel"]["checkInDate"],
+                package["hotel"]["checkOutDate"],
+                package["totalPrice"],
+            )
+            for package in packages
+        }
+        self.assertEqual(len(keys), len(packages))
+        self.assertEqual([package["optionNumber"] for package in packages], list(range(1, len(packages) + 1)))
 
     def test_package_request_requires_dates(self) -> None:
         self._seed_lyon_trip(with_dates=False)

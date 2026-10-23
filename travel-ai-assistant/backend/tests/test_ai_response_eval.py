@@ -8,7 +8,7 @@ from app.llama_service import (
     LLAMA_PLANNER_TOOL_CALL_JSON_SCHEMA,
     TRAVEL_TOOL_ROUTER_PROMPT,
 )
-from evaluation.run_ai_response_eval import (
+from evaluation.scripts.run_ai_response_eval import (
     LIVE_REPORT_JSON,
     LIVE_REPORT_MD,
     LIVE_TRACE_JSONL,
@@ -357,7 +357,7 @@ class AIResponseEvaluationTests(unittest.TestCase):
             scenario_path = Path(scenario_dir) / "live_smoke.json"
             scenario_path.write_text(json.dumps(scenario), encoding="utf-8")
             with patch("app.llama_service.requests.post", return_value=FakeOllamaResponse()), patch(
-                "evaluation.run_ai_response_eval.load_ollama_model_digest",
+                "evaluation.scripts.run_ai_response_eval.load_ollama_model_digest",
                 return_value="fake-digest",
             ):
                 report = run_ai_response_eval(

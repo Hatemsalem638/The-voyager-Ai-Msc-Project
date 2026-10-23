@@ -54,16 +54,49 @@ def _sort_package_options_for_budget(
     packages: list[dict[str, Any]],
     max_budget: float | None,
 ) -> list[dict[str, Any]]:
+    packages = _dedupe_package_options(packages)
     if max_budget is None:
-        return sorted(packages, key=lambda item: item["totalPrice"])
-    return sorted(
-        packages,
-        key=lambda item: (
-            float(item.get("totalPrice") or 0) > max_budget,
-            abs(float(item.get("totalPrice") or 0) - max_budget),
-            float(item.get("totalPrice") or 0),
-        ),
-    )
+        return _renumber_package_options(sorted(packages, key=lambda item: item["totalPrice"]))
+    sorted_packages = sorted(packages, key=lambda item: float(item.get("totalPrice") or 0))
+    in_budget = [
+        item
+        for item in sorted_packages
+        if float(item.get("totalPrice") or 0) <= max_budget
+    ]
+    if in_budget:
+        return _renumber_package_options(in_budget)
+    return _renumber_package_options(sorted_packages[:1])
+
+
+def _dedupe_package_options(packages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    unique: list[dict[str, Any]] = []
+    seen: set[tuple[Any, ...]] = set()
+    for package in packages:
+        flight = package.get("flight") if isinstance(package.get("flight"), dict) else {}
+        hotel = package.get("hotel") if isinstance(package.get("hotel"), dict) else {}
+        key = (
+            flight.get("offerId"),
+            hotel.get("hotelId"),
+            flight.get("departureDate"),
+            flight.get("returnDate"),
+            hotel.get("checkInDate"),
+            hotel.get("checkOutDate"),
+            float(package.get("totalPrice") or 0),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(package)
+    return unique
+
+
+def _renumber_package_options(packages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    renumbered: list[dict[str, Any]] = []
+    for index, package in enumerate(packages, start=1):
+        item = dict(package)
+        item["optionNumber"] = index
+        renumbered.append(item)
+    return renumbered
 
 
 def _package_results_for_chat(packages: list[dict[str, Any]]) -> dict[str, Any]:

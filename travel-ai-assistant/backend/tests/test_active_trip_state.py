@@ -2072,6 +2072,67 @@ class ActiveTripStateTests(unittest.TestCase):
         save_active_trip(self.db, self.session.id, active_trip)
         self.db.commit()
 
+    def _seed_selected_hurghada_trip(self) -> None:
+        active_trip = load_active_trip(self.db, self.session.id)
+        active_trip.update(
+            {
+                "revision": 8,
+                "origin": {
+                    "city": "Birmingham",
+                    "country": "United Kingdom",
+                    "airportCode": "BHX",
+                    "airportName": "Birmingham Airport",
+                    "source": "explicit_origin",
+                },
+                "selectedDestination": {
+                    "city": "Hurghada",
+                    "country": "Egypt",
+                    "airportCode": "HRG",
+                    "airportName": "Hurghada International Airport",
+                    "source": "selected_recommendation",
+                    "recommendationId": "HRG:1",
+                    "confirmed": True,
+                },
+                "destinationRegion": None,
+                "destinationCandidates": [],
+                "dates": {
+                    "departureDate": None,
+                    "returnDate": None,
+                    "source": "destination_selected",
+                },
+                "requestedProducts": ["flights"],
+                "pendingTripRequest": {
+                    "intent": "flight_search",
+                    "origin": {
+                        "city": "Birmingham",
+                        "country": "United Kingdom",
+                        "airportCode": "BHX",
+                        "airportName": "Birmingham Airport",
+                        "source": "explicit_origin",
+                    },
+                    "selectedDestination": {
+                        "city": "Hurghada",
+                        "country": "Egypt",
+                        "airportCode": "HRG",
+                        "airportName": "Hurghada International Airport",
+                        "source": "selected_recommendation",
+                        "recommendationId": "HRG:1",
+                        "confirmed": True,
+                    },
+                    "dates": {
+                        "departureDate": None,
+                        "returnDate": None,
+                        "source": "destination_selected",
+                    },
+                    "missingFields": ["departure_date", "return_date"],
+                },
+                "latestVisibleResultType": "trip_clarification",
+                "status": "destination_selected",
+            }
+        )
+        save_active_trip(self.db, self.session.id, active_trip)
+        self.db.commit()
+
     @staticmethod
     def _mock_destination_comparison_flight_search(
         request: FlightSearchRequest,
@@ -3960,6 +4021,189 @@ class ActiveTripStateTests(unittest.TestCase):
         self.assertEqual(response.results.hotels, [])
         self.assertNotIn("ERZ to LHR", response.reply)
 
+    @patch("app.services.chat_service._search_flights_with_fallback")
+    @patch("app.services.chat_service.route_tool_with_llama")
+    def test_confirmed_destination_is_not_widened_by_date_only_region_merge(
+        self,
+        mock_router,
+        mock_flights,
+    ) -> None:
+        self._seed_selected_hurghada_trip()
+        mock_flights.side_effect = self._mock_flight_search
+        mock_router.return_value = TravelToolCall(
+            tool="prepare_trip_request",
+            arguments={
+                "requested_product": "flight",
+                "intent": "flight_search",
+                "destination_text": "Egypt",
+                "destination_region": "Egypt",
+                "destination_type": "country",
+                "destination_candidates": ["HRG", "SSH"],
+                "departure_date": "2026-09-18",
+                "return_date": "2026-09-25",
+                "missing_fields": [],
+                "use_active_trip_state": False,
+            },
+        )
+
+        response = chat(
+            ChatRequest(
+                message="18th of september and return 25th of september",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        active_trip = load_active_trip(self.db, self.session.id)
+        self.assertEqual(active_trip["selectedDestination"]["airportCode"], "HRG")
+        self.assertIsNone(active_trip.get("destinationRegion"))
+        flight_request = mock_flights.call_args.args[0]
+        self.assertEqual(flight_request.itinerary.origin.code, "BHX")
+        self.assertEqual(flight_request.itinerary.destination.code, "HRG")
+        self.assertEqual(flight_request.itinerary.dates.departure.isoformat(), "2026-09-18")
+        self.assertEqual(flight_request.itinerary.dates.return_date.isoformat(), "2026-09-25")
+        self.assertNotIn(" to Egypt", response.reply)
+
+    @patch("app.services.chat_service._search_flights_with_fallback")
+    @patch("app.services.chat_service.route_tool_with_llama")
+    def test_confirmed_destination_date_and_nights_followup_proceeds(
+        self,
+        mock_router,
+        mock_flights,
+    ) -> None:
+        self._seed_selected_hurghada_trip()
+        mock_flights.side_effect = self._mock_flight_search
+        mock_router.return_value = TravelToolCall(tool="general_help", arguments={})
+
+        response = chat(
+            ChatRequest(
+                message="18th of september and stay for 5 nights",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        flight_request = mock_flights.call_args.args[0]
+        self.assertEqual(flight_request.itinerary.destination.code, "HRG")
+        self.assertEqual(flight_request.itinerary.dates.departure.isoformat(), "2026-09-18")
+        self.assertEqual(flight_request.itinerary.dates.return_date.isoformat(), "2026-09-23")
+        self.assertNotIn("Please provide your exact departure and return dates", response.reply)
+
+    @patch("app.services.chat_service._search_flights_with_fallback")
+    @patch("app.services.chat_service.route_tool_with_llama")
+    def test_confirmed_destination_date_and_days_followup_uses_days_as_stay_length(
+        self,
+        mock_router,
+        mock_flights,
+    ) -> None:
+        self._seed_selected_hurghada_trip()
+        mock_flights.side_effect = self._mock_flight_search
+        mock_router.return_value = TravelToolCall(tool="general_help", arguments={})
+
+        chat(
+            ChatRequest(
+                message="18th of september and for 5 days",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        flight_request = mock_flights.call_args.args[0]
+        self.assertEqual(flight_request.itinerary.origin.code, "BHX")
+        self.assertEqual(flight_request.itinerary.destination.code, "HRG")
+        self.assertEqual(flight_request.itinerary.dates.departure.isoformat(), "2026-09-18")
+        self.assertEqual(flight_request.itinerary.dates.return_date.isoformat(), "2026-09-23")
+
+    @patch("app.services.chat_service._search_flights_with_fallback")
+    @patch("app.services.chat_service.route_tool_with_llama")
+    def test_confirmed_destination_can_change_to_new_specific_city(
+        self,
+        mock_router,
+        mock_flights,
+    ) -> None:
+        self._seed_selected_hurghada_trip()
+        mock_flights.side_effect = self._mock_flight_search
+        mock_router.return_value = TravelToolCall(
+            tool="prepare_trip_request",
+            arguments={
+                "requested_product": "flight",
+                "intent": "flight_search",
+                "destination_text": "Sharm El Sheikh",
+                "destination_code": "SSH",
+                "destination_type": "city",
+                "departure_date": "2026-09-18",
+                "return_date": "2026-09-23",
+                "missing_fields": [],
+                "use_active_trip_state": False,
+            },
+        )
+
+        chat(
+            ChatRequest(
+                message="actually make it Sharm El Sheikh from 18th of september for 5 nights",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        active_trip = load_active_trip(self.db, self.session.id)
+        self.assertEqual(active_trip["selectedDestination"]["airportCode"], "SSH")
+        flight_request = mock_flights.call_args.args[0]
+        self.assertEqual(flight_request.itinerary.destination.code, "SSH")
+
+    @patch("app.services.chat_service.discover_destinations")
+    @patch("app.services.chat_service.route_tool_with_llama")
+    def test_yes_after_destination_discovery_offer_executes_discovery_not_flight_selection(
+        self,
+        mock_router,
+        mock_discovery,
+    ) -> None:
+        mock_discovery.return_value = self._mock_destination_discovery_response()
+        mock_router.side_effect = [
+            TravelToolCall(
+                tool="prepare_trip_request",
+                arguments={
+                    "requested_product": "flight",
+                    "intent": "destination_discovery",
+                    "destination_text": None,
+                    "destination_type": "unknown",
+                    "origin_text": "East Midlands Airport",
+                    "origin_code": "EMA",
+                    "requiredActivities": ["beach"],
+                    "environmentPreferences": ["beach"],
+                    "departure_date": "2026-09-18",
+                    "missing_fields": [],
+                    "use_active_trip_state": True,
+                },
+            ),
+            TravelToolCall(
+                tool="select_flight",
+                arguments={"selection": "current", "use_active_trip_state": True},
+            ),
+        ]
+
+        offered = chat(
+            ChatRequest(message="18th of september from my location", sessionId=self.session.id),
+            db=self.db,
+            current_user=self.user,
+        )
+        self.assertIn("I can search beach destinations", offered.reply)
+        self.assertIn("departing 18 Sep 2026", offered.reply)
+
+        confirmed = chat(
+            ChatRequest(message="yes please", sessionId=self.session.id),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        mock_discovery.assert_called_once()
+        self.assertIn("destination ideas", confirmed.reply)
+        self.assertNotIn("Please choose a flight option first", confirmed.reply)
+
     @patch("app.main._search_flights_with_fallback")
     @patch("app.main.today_utc_date", return_value=AUGUST_8)
     def test_explicit_miami_destination_beats_destination_discovery(
@@ -5525,6 +5769,80 @@ class ActiveTripStateTests(unittest.TestCase):
         discovery_request = mock_discovery.call_args.args[0]
         self.assertEqual(discovery_request.dates["departure"], "2026-08-15")
         self.assertEqual(discovery_request.dates["return"], "2026-08-18")
+
+    @patch("app.services.chat_service.today_utc_date", return_value=date(2026, 8, 14))
+    @patch("app.services.chat_service.route_tool_with_llama")
+    @patch("app.services.chat_service.resolve_clarification_answer_with_llama")
+    @patch("app.services.chat_service.discover_destinations")
+    def test_pending_destination_date_and_new_nights_overrides_stored_duration(
+        self,
+        mock_discovery,
+        mock_clarification,
+        mock_router,
+        _mock_today,
+    ) -> None:
+        mock_router.side_effect = self._pending_skiing_router_calls()
+        mock_clarification.return_value = ClarificationAnswer(resolved=False)
+        mock_discovery.return_value = self._mock_destination_discovery_response()
+
+        chat(
+            ChatRequest(
+                message="i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+        chat(
+            ChatRequest(
+                message="18th of september and stay for 5 nights",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        discovery_request = mock_discovery.call_args.args[0]
+        self.assertEqual(discovery_request.dates["departure"], "2026-09-18")
+        self.assertEqual(discovery_request.dates["return"], "2026-09-23")
+        self.assertEqual(discovery_request.trip_duration_nights, 5)
+
+    @patch("app.services.chat_service.today_utc_date", return_value=date(2026, 8, 14))
+    @patch("app.services.chat_service.route_tool_with_llama")
+    @patch("app.services.chat_service.resolve_clarification_answer_with_llama")
+    @patch("app.services.chat_service.discover_destinations")
+    def test_pending_destination_date_and_days_uses_current_stay_length(
+        self,
+        mock_discovery,
+        mock_clarification,
+        mock_router,
+        _mock_today,
+    ) -> None:
+        mock_router.side_effect = self._pending_skiing_router_calls()
+        mock_clarification.return_value = ClarificationAnswer(resolved=False)
+        mock_discovery.return_value = self._mock_destination_discovery_response()
+
+        chat(
+            ChatRequest(
+                message="i want to fly to somewhere that i can do skiing and i want to go for 3 nights",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+        chat(
+            ChatRequest(
+                message="18th of september and for 5 days",
+                sessionId=self.session.id,
+            ),
+            db=self.db,
+            current_user=self.user,
+        )
+
+        discovery_request = mock_discovery.call_args.args[0]
+        self.assertEqual(discovery_request.dates["departure"], "2026-09-18")
+        self.assertEqual(discovery_request.dates["return"], "2026-09-23")
+        self.assertEqual(discovery_request.trip_duration_nights, 5)
 
     @patch("app.services.chat_service.today_utc_date", return_value=date(2026, 8, 14))
     @patch("app.services.chat_service.route_tool_with_llama")

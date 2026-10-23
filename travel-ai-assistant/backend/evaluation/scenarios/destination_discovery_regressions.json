@@ -1,0 +1,277 @@
+[
+  {
+    "id": "confirmed_destination_not_widened_by_date_only_region",
+    "description": "A confirmed destination selected from discovery results must not be widened back to its country on a date-only follow-up.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 8,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Hurghada",
+          "country": "Egypt",
+          "airportCode": "HRG",
+          "airportName": "Hurghada International Airport",
+          "source": "selected_recommendation",
+          "recommendationId": "HRG:1",
+          "confirmed": true
+        },
+        "destinationRegion": null,
+        "destinationCandidates": [],
+        "dates": {
+          "departureDate": null,
+          "returnDate": null,
+          "source": "destination_selected"
+        },
+        "requestedProducts": ["flights"],
+        "pendingTripRequest": {
+          "intent": "flight_search",
+          "missingFields": ["departure_date", "return_date"]
+        },
+        "latestVisibleResultType": "trip_clarification",
+        "status": "destination_selected"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "18th of september and return 25th of september",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "flight_search",
+            "destination_text": "Egypt",
+            "destination_region": "Egypt",
+            "destination_type": "country",
+            "destination_candidates": ["HRG", "SSH"],
+            "departure_date": "2026-09-18",
+            "return_date": "2026-09-25",
+            "missing_fields": [],
+            "use_active_trip_state": false
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "BHX",
+          "selectedDestination.airportCode": "HRG",
+          "destinationRegion": null,
+          "dates.departureDate": "2026-09-18",
+          "dates.returnDate": "2026-09-25"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "HRG",
+            "departureDate": "2026-09-18",
+            "returnDate": "2026-09-25"
+          }
+        ],
+        "forbidden_response_text": [" to Egypt", "Please provide your exact departure"]
+      }
+    ]
+  },
+  {
+    "id": "confirmed_destination_date_nights_resume",
+    "description": "A selected destination with missing dates should accept a date plus nights answer even if Llama returns general_help.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 8,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Hurghada",
+          "country": "Egypt",
+          "airportCode": "HRG",
+          "airportName": "Hurghada International Airport",
+          "source": "selected_recommendation",
+          "recommendationId": "HRG:1",
+          "confirmed": true
+        },
+        "dates": {
+          "departureDate": null,
+          "returnDate": null,
+          "source": "destination_selected"
+        },
+        "requestedProducts": ["flights"],
+        "pendingTripRequest": {
+          "intent": "flight_search",
+          "missingFields": ["departure_date", "return_date"]
+        },
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "18th of september and stay for 5 nights",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "selectedDestination.airportCode": "HRG",
+          "dates.departureDate": "2026-09-18",
+          "dates.returnDate": "2026-09-23",
+          "tripDurationNights": 5,
+          "latestVisibleResultType": "flights"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "HRG",
+            "departureDate": "2026-09-18",
+            "returnDate": "2026-09-23"
+          }
+        ],
+        "forbidden_response_text": ["Please provide your exact departure"]
+      }
+    ]
+  },
+  {
+    "id": "confirmed_destination_date_days_resume",
+    "description": "A selected destination with missing dates should treat a stated stay length in days as the current stay length on this clarification path.",
+    "initial_state": {
+      "active_trip": {
+        "revision": 8,
+        "origin": {
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "airportCode": "BHX",
+          "airportName": "Birmingham Airport",
+          "source": "explicit_origin"
+        },
+        "selectedDestination": {
+          "city": "Hurghada",
+          "country": "Egypt",
+          "airportCode": "HRG",
+          "airportName": "Hurghada International Airport",
+          "source": "selected_recommendation",
+          "recommendationId": "HRG:1",
+          "confirmed": true
+        },
+        "dates": {
+          "departureDate": null,
+          "returnDate": null,
+          "source": "destination_selected"
+        },
+        "requestedProducts": ["flights"],
+        "pendingTripRequest": {
+          "intent": "flight_search",
+          "missingFields": ["departure_date", "return_date"]
+        },
+        "latestVisibleResultType": "trip_clarification"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "18th of september and for 5 days",
+        "mocked_llama_output": {
+          "tool": "general_help",
+          "arguments": {}
+        },
+        "expected_tool": "general_help",
+        "expected_active_state": {
+          "selectedDestination.airportCode": "HRG",
+          "dates.departureDate": "2026-09-18",
+          "dates.returnDate": "2026-09-23",
+          "tripDurationNights": 5,
+          "latestVisibleResultType": "flights"
+        },
+        "expected_provider_calls": [
+          {
+            "type": "flights",
+            "origin": "BHX",
+            "destination": "HRG",
+            "departureDate": "2026-09-18",
+            "returnDate": "2026-09-23"
+          }
+        ],
+        "forbidden_response_text": ["Please provide your exact departure"]
+      }
+    ]
+  },
+  {
+    "id": "affirmative_after_destination_discovery_offer_executes_discovery",
+    "description": "An affirmative after a destination-discovery offer should execute the pending destination search, not select a flight.",
+    "initial_state": {
+      "default_origin": {
+        "city": "East Midlands",
+        "country": "United Kingdom",
+        "airportCode": "EMA",
+        "airportName": "East Midlands Airport",
+        "source": "evaluation_default_origin"
+      }
+    },
+    "turns": [
+      {
+        "user_message": "18th of september from my location",
+        "mocked_llama_output": {
+          "tool": "prepare_trip_request",
+          "arguments": {
+            "requested_product": "flight",
+            "intent": "destination_discovery",
+            "destination_text": null,
+            "destination_type": "unknown",
+            "origin_text": "East Midlands Airport",
+            "origin_code": "EMA",
+            "requiredActivities": ["beach"],
+            "environmentPreferences": ["beach"],
+            "departure_date": "2026-09-18",
+            "missing_fields": [],
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "prepare_trip_request",
+        "expected_active_state": {
+          "origin.airportCode": "EMA",
+          "dates.departureDate": "2026-09-18",
+          "pendingAction.type": "suggest_destinations",
+          "latestVisibleResultType": "destination_discovery_pending"
+        },
+        "expected_pendingAction": {
+          "type": "suggest_destinations",
+          "origin": "EMA",
+          "departureDate": "2026-09-18"
+        },
+        "expected_response_contains": ["I can search beach destinations"],
+        "forbidden_provider_calls": ["flights"]
+      },
+      {
+        "user_message": "yes please",
+        "mocked_llama_output": {
+          "tool": "select_flight",
+          "arguments": {
+            "selection": "current",
+            "use_active_trip_state": true
+          }
+        },
+        "expected_tool": "select_flight",
+        "expected_active_state": {
+          "latestVisibleResultType": "destinations",
+          "pendingAction": null
+        },
+        "expected_provider_calls": [
+          {
+            "type": "destinations",
+            "origin": "EMA",
+            "departureDate": "2026-09-18"
+          }
+        ],
+        "expected_response_contains": ["destination ideas"],
+        "forbidden_response_text": ["Please choose a flight option first"]
+      }
+    ]
+  }
+]
